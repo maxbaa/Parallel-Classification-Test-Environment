@@ -8,7 +8,7 @@ from typing import Optional, Any
 from dataclasses import dataclass
 import numpy as np
 
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 
 @dataclass
 class QualityMetrics:
@@ -18,7 +18,6 @@ class QualityMetrics:
     recall: float
     f1: float
     roc_auc: Optional[float] 
-    confusion_matrix: np.ndarray
 
 def compute_quality_metrics(model: Any, X_test, y_test) -> QualityMetrics:
     """Compute classification quality metrics for a given model and test data."""
@@ -36,13 +35,10 @@ def compute_quality_metrics(model: Any, X_test, y_test) -> QualityMetrics:
     except Exception:
         roc_auc = None
 
-    confusion_matrix = confusion_matrix(y_test, y_pred)
-
     return QualityMetrics(
         accuracy=accuracy_score(y_test, y_pred),
         precision=precision_score(y_test, y_pred, zero_division=0),
         recall=recall_score(y_test, y_pred, zero_division=0),
         f1=f1_score(y_test, y_pred, zero_division=0),
         roc_auc=roc_auc,
-        confusion_matrix=confusion_matrix
     )
