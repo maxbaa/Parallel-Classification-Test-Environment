@@ -11,6 +11,7 @@ dependencies = [
     "scikit-learn",
     "psutil",
     "pyyaml",
+    "typing-extensions",
 ]
 
 [project.optional-dependencies]

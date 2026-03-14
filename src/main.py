@@ -1,13 +1,21 @@
 from evaluation.runner import ExperimentRunner
 from evaluation.configs import AlgorithmConfig, DatasetConfig, ScenarioConfig
 from data.loaders import load_breast_cancer_dataset
-from algorithms.sklearn_wrappers import create_rf
+from algorithms.sklearn_wrappers import create_cascade_svc
 
 # 1) Algorithm configuration
 algo = AlgorithmConfig(
-    name="RF_test",
-    parameters={"n_estimators": 50},
-    implementation=create_rf
+    name="CascadeSVC_test",
+    parameters={
+        "fold_size": 100,
+        "kernel": "rbf",
+        "C": 1.0,
+        "gamma": "scale",
+        "probability": True,
+        "verbose": False,
+        "random_state": 42,
+    },
+    implementation=create_cascade_svc,
 )
 
 # 2) Dataset configuration
@@ -28,7 +36,7 @@ runner = ExperimentRunner(
     algorithms=[algo],
     datasets=[dataset],
     scenarios=[scenario],
-    repetitions=10   # nur eine Wiederholung
+    repetitions=3   # nur eine Wiederholung
 )
 
 df = runner.run()
