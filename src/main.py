@@ -3,6 +3,8 @@ from evaluation.configs import AlgorithmConfig, DatasetConfig, ScenarioConfig
 from data.loaders import load_breast_cancer_dataset
 from algorithms.sklearn_wrappers import create_baseline_svc, create_cascade_svc
 from algorithms.sklearn_wrappers import create_baseline_mlp
+from algorithms.sklearn_wrappers import create_baseline_rf
+from algorithms.sklearn_wrappers import create_baseline_knn
 
 
 # 1) Algorithm configurations
@@ -50,7 +52,36 @@ cascade_svm = AlgorithmConfig(
     implementation=create_cascade_svc,
 )
 
+# Random Forest configurations
 
+baseline_rf = AlgorithmConfig(
+    name="BaselineRF",
+    parameters={
+        "n_estimators": 100,
+        "max_depth": None,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "random_state": 42,
+    },
+    implementation=create_baseline_rf,
+)
+
+# k-NN configurations
+
+baseline_knn = AlgorithmConfig(
+    name="BaselineKNN",
+    parameters={
+        "n_neighbors": 5,
+        "weights": "uniform",
+        "algorithm": "auto",
+        "leaf_size": 30,
+        "p": 2,
+        "metric": "minkowski",
+        "metric_params": None,
+        "n_jobs": 1,
+    },
+    implementation=create_baseline_knn,
+)
 
 # 2) Dataset configuration
 dataset = DatasetConfig(
@@ -67,10 +98,10 @@ scenario = ScenarioConfig(
 
 # 4) Runner
 runner = ExperimentRunner(
-    algorithms=[baseline_svm, cascade_svm, baseline_nn],
+    algorithms=[baseline_svm, cascade_svm, baseline_nn, baseline_rf, baseline_knn],
     datasets=[dataset],
     scenarios=[scenario],
-    repetitions=50   # nur eine Wiederholung
+    repetitions=3   # nur eine Wiederholung
 )
 
 df = runner.run()
