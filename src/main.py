@@ -1,11 +1,24 @@
 from evaluation.runner import ExperimentRunner
 from evaluation.configs import AlgorithmConfig, DatasetConfig, ScenarioConfig
 from data.loaders import load_breast_cancer_dataset
-from algorithms.sklearn_wrappers import create_cascade_svc
+from algorithms.sklearn_wrappers import create_baseline_svc, create_cascade_svc
 
-# 1) Algorithm configuration
-algo = AlgorithmConfig(
-    name="CascadeSVC_test",
+# 1) Algorithm configurations
+baseline_svm = AlgorithmConfig(
+    name="BaselineSVC",
+    parameters={
+        "kernel": "rbf",
+        "C": 1.0,
+        "gamma": "scale",
+        "probability": True,
+        "verbose": False,
+        "random_state": 42,
+    },
+    implementation=create_baseline_svc,
+)
+
+cascade_svm = AlgorithmConfig(
+    name="CascadeSVC",
     parameters={
         "fold_size": 100,
         "kernel": "rbf",
@@ -33,7 +46,7 @@ scenario = ScenarioConfig(
 
 # 4) Runner
 runner = ExperimentRunner(
-    algorithms=[algo],
+    algorithms=[baseline_svm, cascade_svm],
     datasets=[dataset],
     scenarios=[scenario],
     repetitions=3   # nur eine Wiederholung
