@@ -4,6 +4,7 @@ from data.loaders import load_breast_cancer_dataset
 from algorithms.sklearn_wrappers import create_baseline_svc, create_cascade_svc
 from algorithms.sklearn_wrappers import create_baseline_mlp
 from algorithms.sklearn_wrappers import create_baseline_rf
+from algorithms.sklearn_wrappers import create_hybrid_rf
 from algorithms.sklearn_wrappers import create_baseline_knn
 
 
@@ -66,6 +67,16 @@ baseline_rf = AlgorithmConfig(
     implementation=create_baseline_rf,
 )
 
+hybrid_rf = AlgorithmConfig(
+    name="HybridRF",
+    parameters={
+        "n_estimators": 100,
+        "max_depth": 5,
+        "random_state": 42,
+    },
+    implementation=create_hybrid_rf,
+)
+
 # k-NN configurations
 
 baseline_knn = AlgorithmConfig(
@@ -98,7 +109,7 @@ scenario = ScenarioConfig(
 
 # 4) Runner
 runner = ExperimentRunner(
-    algorithms=[baseline_svm, cascade_svm, baseline_nn, baseline_rf, baseline_knn],
+    algorithms=[baseline_svm, cascade_svm, baseline_nn, baseline_rf, hybrid_rf, baseline_knn],
     datasets=[dataset],
     scenarios=[scenario],
     repetitions=3   # nur eine Wiederholung

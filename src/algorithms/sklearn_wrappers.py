@@ -43,6 +43,20 @@ def _load_baseline_rf():
     return module.BaselineRF
 
 
+def _load_hybrid_rf():
+    hybrid_module_path = (
+        Path(__file__).resolve().parent
+        / "03_RF"
+        / "HybridRF"
+        / "hybridrf.py"
+    )
+    spec = spec_from_file_location("hybrid_rf_module", hybrid_module_path)
+    module = module_from_spec(spec)
+    assert spec is not None and spec.loader is not None
+    spec.loader.exec_module(module)
+    return module.HybridRF
+
+
 def _load_baseline_svc():
     baseline_module_path = (
         Path(__file__).resolve().parent
@@ -75,6 +89,7 @@ def _load_cascade_svc():
 BaselineKNN = _load_baseline_knn()
 BaselineMLP = _load_baseline_mlp()
 BaselineRF = _load_baseline_rf()
+HybridRF = _load_hybrid_rf()
 BaselineSVC = _load_baseline_svc()
 CascadeSVC = _load_cascade_svc()
 
@@ -143,6 +158,15 @@ def create_baseline_rf(params):
         class_weight=params.get("class_weight"),
         ccp_alpha=params.get("ccp_alpha", 0.0),
         max_samples=params.get("max_samples"),
+    )
+
+
+def create_hybrid_rf(params):
+    return HybridRF(
+        n_estimators=params.get("n_estimators", 100),
+        max_depth=params.get("max_depth", 5),
+        n_processes=params.get("n_workers", 1),
+        random_state=params.get("random_state", 42),
     )
 
 
