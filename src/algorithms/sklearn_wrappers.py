@@ -1,7 +1,18 @@
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
-from sklearn.ensemble import RandomForestClassifier
+def _load_baseline_knn():
+    baseline_module_path = (
+        Path(__file__).resolve().parent
+        / "04_k-NN"
+        / "BaselineKNN"
+        / "baselineknn.py"
+    )
+    spec = spec_from_file_location("baseline_knn_module", baseline_module_path)
+    module = module_from_spec(spec)
+    assert spec is not None and spec.loader is not None
+    spec.loader.exec_module(module)
+    return module.BaselineKNN
 
 
 def _load_baseline_mlp():
@@ -16,6 +27,20 @@ def _load_baseline_mlp():
     assert spec is not None and spec.loader is not None
     spec.loader.exec_module(module)
     return module.BaselineMLP
+
+
+def _load_baseline_rf():
+    baseline_module_path = (
+        Path(__file__).resolve().parent
+        / "03_RF"
+        / "BaselineRF"
+        / "baselinerf.py"
+    )
+    spec = spec_from_file_location("baseline_rf_module", baseline_module_path)
+    module = module_from_spec(spec)
+    assert spec is not None and spec.loader is not None
+    spec.loader.exec_module(module)
+    return module.BaselineRF
 
 
 def _load_baseline_svc():
@@ -47,16 +72,27 @@ def _load_cascade_svc():
     return module.CascadeSVC
 
 
+BaselineKNN = _load_baseline_knn()
 BaselineMLP = _load_baseline_mlp()
+BaselineRF = _load_baseline_rf()
 BaselineSVC = _load_baseline_svc()
 CascadeSVC = _load_cascade_svc()
 
-def create_rf(params):
-    return RandomForestClassifier(
-        n_estimators=params.get("n_estimators", 50),
+def create_baseline_knn(params):
+    return BaselineKNN(
+        n_neighbors=params.get("n_neighbors", 5),
+        weights=params.get("weights", "uniform"),
+        algorithm=params.get("algorithm", "auto"),
+        leaf_size=params.get("leaf_size", 30),
+        p=params.get("p", 2),
+        metric=params.get("metric", "minkowski"),
+        metric_params=params.get("metric_params"),
         n_jobs=params.get("n_workers", 1),
-        random_state=42
     )
+
+
+def create_knn(params):
+    return create_baseline_knn(params)
 
 
 def create_baseline_mlp(params):
@@ -85,6 +121,33 @@ def create_baseline_mlp(params):
         max_fun=params.get("max_fun", 15000),
         random_state=params.get("random_state", 42),
     )
+
+
+def create_baseline_rf(params):
+    return BaselineRF(
+        n_estimators=params.get("n_estimators", 100),
+        criterion=params.get("criterion", "gini"),
+        max_depth=params.get("max_depth"),
+        min_samples_split=params.get("min_samples_split", 2),
+        min_samples_leaf=params.get("min_samples_leaf", 1),
+        min_weight_fraction_leaf=params.get("min_weight_fraction_leaf", 0.0),
+        max_features=params.get("max_features", "sqrt"),
+        max_leaf_nodes=params.get("max_leaf_nodes"),
+        min_impurity_decrease=params.get("min_impurity_decrease", 0.0),
+        bootstrap=params.get("bootstrap", True),
+        oob_score=params.get("oob_score", False),
+        n_jobs=params.get("n_workers", 1),
+        random_state=params.get("random_state", 42),
+        verbose=params.get("verbose", 0),
+        warm_start=params.get("warm_start", False),
+        class_weight=params.get("class_weight"),
+        ccp_alpha=params.get("ccp_alpha", 0.0),
+        max_samples=params.get("max_samples"),
+    )
+
+
+def create_rf(params):
+    return create_baseline_rf(params)
 
 
 def create_cascade_svc(params):
