@@ -6,18 +6,20 @@ from sklearn.model_selection import train_test_split
 
 try:
     import torch
+    import torch.distributed as dist
     from torch import nn
     from torch.utils.data import DataLoader, TensorDataset
     _TORCH_IMPORT_ERROR = None
 except ImportError as exc:
     torch = None
+    dist = None
     nn = None
     DataLoader = None
     TensorDataset = None
     _TORCH_IMPORT_ERROR = exc
 
 
-class _TorchMLP(nn.Module if nn is not None else object):
+class _DualPipeFallbackMLP(nn.Module if nn is not None else object):
     def __init__(self, input_dim, hidden_layer_sizes, activation, output_dim):
         super().__init__()
 
@@ -36,8 +38,8 @@ class _TorchMLP(nn.Module if nn is not None else object):
         return self.network(X)
 
 
-class BaselineMLP(ClassifierMixin, BaseEstimator):
-    """Thin PyTorch-based MLP baseline with a sklearn-like interface."""
+class DualPipeClassifier(ClassifierMixin, BaseEstimator):
+    """Project-consistent DualPipe entrypoint with a safe local fallback."""
 
     def __init__(
         self,
@@ -57,6 +59,8 @@ class BaselineMLP(ClassifierMixin, BaseEstimator):
         n_iter_no_change=10,
         random_state=42,
         device=None,
+        n_workers=1,
+        num_chunks=8,
     ):
         self.hidden_layer_sizes = hidden_layer_sizes
         self.activation = activation
@@ -74,12 +78,14 @@ class BaselineMLP(ClassifierMixin, BaseEstimator):
         self.n_iter_no_change = n_iter_no_change
         self.random_state = random_state
         self.device = device
+        self.n_workers = n_workers
+        self.num_chunks = num_chunks
 
     def _require_torch(self):
         if _TORCH_IMPORT_ERROR is not None:
             raise ImportError(
-                "PyTorch is required for BaselineMLP. Install project dependencies "
-                "again so that 'torch' is available."
+                "PyTorch is required for DualPipeClassifier. Install project "
+                "dependencies again so that 'torch' is available."
             ) from _TORCH_IMPORT_ERROR
 
     def _get_activation(self):
@@ -100,6 +106,17 @@ class BaselineMLP(ClassifierMixin, BaseEstimator):
             return torch.device("cuda")
         return torch.device("cpu")
 
+    def _dualpipe_ready(self):
+        if dist is None or not dist.is_available() or not dist.is_initialized():
+            return False
+        world_size = dist.get_world_size()
+        return (
+            torch.cuda.is_available()
+            and world_size >= 2
+            and world_size % 2 == 0
+            and self.n_workers == world_size
+        )
+
     def _get_batch_size(self, n_samples):
         if self.batch_size == "auto":
             return min(200, n_samples)
@@ -111,7 +128,7 @@ class BaselineMLP(ClassifierMixin, BaseEstimator):
         return encoded
 
     def _build_model(self, input_dim, output_dim):
-        self.model_ = _TorchMLP(
+        self.model_ = _DualPipeFallbackMLP(
             input_dim=input_dim,
             hidden_layer_sizes=self.hidden_layer_sizes,
             activation=self._get_activation(),
@@ -157,7 +174,9 @@ class BaselineMLP(ClassifierMixin, BaseEstimator):
     def _evaluate_loss(self, X, y, criterion):
         X_tensor = torch.tensor(X, dtype=torch.float32, device=self.device_)
         if self._is_binary:
-            y_tensor = torch.tensor(y, dtype=torch.float32, device=self.device_).unsqueeze(1)
+            y_tensor = torch.tensor(
+                y, dtype=torch.float32, device=self.device_
+            ).unsqueeze(1)
         else:
             y_tensor = torch.tensor(y, dtype=torch.long, device=self.device_)
 
@@ -168,17 +187,7 @@ class BaselineMLP(ClassifierMixin, BaseEstimator):
         self.model_.train()
         return float(loss.item())
 
-    def fit(self, X, y):
-        self._require_torch()
-
-        X = np.asarray(X, dtype=np.float32)
-        y = np.asarray(y)
-
-        torch.manual_seed(self.random_state)
-        if torch.cuda.is_available():
-            torch.cuda.manual_seed_all(self.random_state)
-        np.random.seed(self.random_state)
-
+    def _fit_local(self, X, y):
         self.device_ = self._get_device()
         self.n_features_in_ = X.shape[1]
         y_encoded = self._encode_targets(y)
@@ -200,7 +209,9 @@ class BaselineMLP(ClassifierMixin, BaseEstimator):
         output_dim = 1 if self._is_binary else len(self.classes_)
         self._build_model(self.n_features_in_, output_dim)
         optimizer = self._build_optimizer()
-        criterion = nn.BCEWithLogitsLoss() if self._is_binary else nn.CrossEntropyLoss()
+        criterion = (
+            nn.BCEWithLogitsLoss() if self._is_binary else nn.CrossEntropyLoss()
+        )
         train_loader = self._create_loader(X_train, y_train)
 
         best_state = copy.deepcopy(self.model_.state_dict())
@@ -238,7 +249,9 @@ class BaselineMLP(ClassifierMixin, BaseEstimator):
                 stale_epochs += 1
 
             if self.verbose:
-                print(f"Epoch {epoch + 1}/{self.max_iter} - loss={monitored_loss:.6f}")
+                print(
+                    f"Epoch {epoch + 1}/{self.max_iter} - loss={monitored_loss:.6f}"
+                )
 
             if self.early_stopping and stale_epochs >= self.n_iter_no_change:
                 break
@@ -246,11 +259,37 @@ class BaselineMLP(ClassifierMixin, BaseEstimator):
         self.model_.load_state_dict(best_state)
         self.model_.eval()
         self.n_iter_ = epoch + 1
+        self.execution_mode_ = "local_fallback"
         return self
+
+    def fit(self, X, y):
+        self._require_torch()
+
+        X = np.asarray(X, dtype=np.float32)
+        y = np.asarray(y)
+
+        torch.manual_seed(self.random_state)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(self.random_state)
+        np.random.seed(self.random_state)
+
+        if self._dualpipe_ready():
+            raise NotImplementedError(
+                "DualPipeClassifier is integrated into the project structure, but "
+                "the current ExperimentRunner does not orchestrate distributed "
+                "DualPipe execution yet. Use the low-level DualPipe package from "
+                "this directory in a dedicated torch.distributed entrypoint."
+            )
+
+        return self._fit_local(X, y)
 
     def _get_logits(self, X):
         self._require_torch()
-        X_tensor = torch.tensor(np.asarray(X, dtype=np.float32), dtype=torch.float32, device=self.device_)
+        X_tensor = torch.tensor(
+            np.asarray(X, dtype=np.float32),
+            dtype=torch.float32,
+            device=self.device_,
+        )
         self.model_.eval()
         with torch.no_grad():
             logits = self.model_(X_tensor)

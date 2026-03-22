@@ -3,6 +3,7 @@ from evaluation.configs import AlgorithmConfig, DatasetConfig, ScenarioConfig
 from data.loaders import load_breast_cancer_dataset
 from algorithms.sklearn_wrappers import create_baseline_svc, create_cascade_svc
 from algorithms.sklearn_wrappers import create_baseline_mlp
+from algorithms.sklearn_wrappers import create_dualpipe_classifier
 from algorithms.sklearn_wrappers import create_baseline_rf
 from algorithms.sklearn_wrappers import create_hybrid_rf
 from algorithms.sklearn_wrappers import create_baseline_knn
@@ -22,6 +23,19 @@ baseline_nn = AlgorithmConfig(
         "random_state": 42,
     },
     implementation=create_baseline_mlp,
+)
+
+dualpipe_nn = AlgorithmConfig(
+    name="DualPipeClassifier",
+    parameters={
+        "hidden_layer_sizes": (100,),
+        "activation": "relu",
+        "solver": "adam",
+        "max_iter": 200,
+        "random_state": 42,
+        "num_chunks": 8,
+    },
+    implementation=create_dualpipe_classifier,
 )
 
 # SVM configurations
@@ -109,7 +123,15 @@ scenario = ScenarioConfig(
 
 # 4) Runner
 runner = ExperimentRunner(
-    algorithms=[baseline_svm, cascade_svm, baseline_nn, baseline_rf, hybrid_rf, baseline_knn],
+    algorithms=[
+        baseline_svm,
+        cascade_svm,
+        baseline_nn,
+        dualpipe_nn,
+        baseline_rf,
+        hybrid_rf,
+        baseline_knn,
+    ],
     datasets=[dataset],
     scenarios=[scenario],
     repetitions=3   # nur eine Wiederholung

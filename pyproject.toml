@@ -10,12 +10,10 @@ dependencies = [
     "pandas",
     "scikit-learn",
     "psutil",
+    "torch",
     "pyyaml",
     "typing-extensions",
 ]
-
-[project.optional-dependencies]
-gpu = ["torch"]
 
 [build-system]
 requires = ["setuptools>=61.0"]
