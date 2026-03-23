@@ -2,6 +2,7 @@ from evaluation.runner import ExperimentRunner
 from evaluation.configs import AlgorithmConfig, DatasetConfig, ScenarioConfig
 from data.loaders import load_breast_cancer_dataset
 from algorithms.sklearn_wrappers import create_baseline_svc, create_cascade_svc
+from algorithms.sklearn_wrappers import create_thunder_svc
 from algorithms.sklearn_wrappers import create_baseline_mlp
 from algorithms.sklearn_wrappers import create_dualpipe_classifier
 from algorithms.sklearn_wrappers import create_fsdp_mlp
@@ -81,6 +82,19 @@ cascade_svm = AlgorithmConfig(
     implementation=create_cascade_svc,
 )
 
+thunder_svm = AlgorithmConfig(
+    name="ThunderSVC",
+    parameters={
+        "kernel": "rbf",
+        "C": 1.0,
+        "gamma": "scale",
+        "probability": True,
+        "verbose": False,
+        "random_state": 42,
+    },
+    implementation=create_thunder_svc,
+)
+
 # Random Forest configurations
 
 baseline_rf = AlgorithmConfig(
@@ -140,6 +154,7 @@ runner = ExperimentRunner(
     algorithms=[
         baseline_svm,
         cascade_svm,
+        thunder_svm,
         baseline_nn,
         dualpipe_nn,
         fsdp_nn,

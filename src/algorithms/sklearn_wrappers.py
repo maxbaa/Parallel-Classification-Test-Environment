@@ -120,6 +120,20 @@ def _load_cascade_svc():
     return module.CascadeSVC
 
 
+def _load_thunder_svc():
+    thunder_module_path = (
+        Path(__file__).resolve().parent
+        / "02_SVM"
+        / "ThunderSVC"
+        / "thundersvc.py"
+    )
+    spec = spec_from_file_location("thunder_svc_module", thunder_module_path)
+    module = module_from_spec(spec)
+    assert spec is not None and spec.loader is not None
+    spec.loader.exec_module(module)
+    return module.ThunderSVC
+
+
 BaselineKNN = _load_baseline_knn()
 BaselineMLP = _load_baseline_mlp()
 DualPipeClassifier = _load_dualpipe_classifier()
@@ -128,6 +142,7 @@ BaselineRF = _load_baseline_rf()
 HybridRF = _load_hybrid_rf()
 BaselineSVC = _load_baseline_svc()
 CascadeSVC = _load_cascade_svc()
+ThunderSVC = _load_thunder_svc()
 
 def create_baseline_knn(params):
     return BaselineKNN(
@@ -280,5 +295,24 @@ def create_baseline_svc(params):
         max_iter=params.get("max_iter", -1),
         decision_function_shape=params.get("decision_function_shape", "ovr"),
         break_ties=params.get("break_ties", False),
+        random_state=params.get("random_state", 42),
+    )
+
+
+def create_thunder_svc(params):
+    return ThunderSVC(
+        C=params.get("C", 1.0),
+        kernel=params.get("kernel", "rbf"),
+        degree=params.get("degree", 3),
+        gamma=params.get("gamma", "scale"),
+        coef0=params.get("coef0", 0.0),
+        shrinking=params.get("shrinking", True),
+        probability=params.get("probability", True),
+        tol=params.get("tol", 1e-3),
+        cache_size=params.get("cache_size", 200),
+        class_weight=params.get("class_weight"),
+        verbose=params.get("verbose", False),
+        max_iter=params.get("max_iter", -1),
+        decision_function_shape=params.get("decision_function_shape", "ovr"),
         random_state=params.get("random_state", 42),
     )
