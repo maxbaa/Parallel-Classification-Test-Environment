@@ -49,6 +49,20 @@ def _load_dualpipe_classifier():
     return module.DualPipeClassifier
 
 
+def _load_fsdp_mlp():
+    module_path = (
+        Path(__file__).resolve().parent
+        / "01_NN"
+        / "FSDPMLP"
+        / "fsdpmlp.py"
+    )
+    spec = spec_from_file_location("fsdp_mlp_module", module_path)
+    module = module_from_spec(spec)
+    assert spec is not None and spec.loader is not None
+    spec.loader.exec_module(module)
+    return module.FSDPMLP
+
+
 def _load_baseline_rf():
     baseline_module_path = (
         Path(__file__).resolve().parent
@@ -109,6 +123,7 @@ def _load_cascade_svc():
 BaselineKNN = _load_baseline_knn()
 BaselineMLP = _load_baseline_mlp()
 DualPipeClassifier = _load_dualpipe_classifier()
+FSDPMLP = _load_fsdp_mlp()
 BaselineRF = _load_baseline_rf()
 HybridRF = _load_hybrid_rf()
 BaselineSVC = _load_baseline_svc()
@@ -172,6 +187,30 @@ def create_dualpipe_classifier(params):
         device=params.get("device"),
         n_workers=params.get("n_workers", 1),
         num_chunks=params.get("num_chunks", 8),
+    )
+
+
+def create_fsdp_mlp(params):
+    return FSDPMLP(
+        hidden_layer_sizes=params.get("hidden_layer_sizes", (100,)),
+        activation=params.get("activation", "relu"),
+        solver=params.get("solver", "adam"),
+        alpha=params.get("alpha", 1e-4),
+        batch_size=params.get("batch_size", "auto"),
+        learning_rate_init=params.get("learning_rate_init", 1e-3),
+        max_iter=params.get("max_iter", 200),
+        shuffle=params.get("shuffle", True),
+        tol=params.get("tol", 1e-4),
+        verbose=params.get("verbose", False),
+        momentum=params.get("momentum", 0.9),
+        early_stopping=params.get("early_stopping", False),
+        validation_fraction=params.get("validation_fraction", 0.1),
+        n_iter_no_change=params.get("n_iter_no_change", 10),
+        random_state=params.get("random_state", 42),
+        device=params.get("device"),
+        n_workers=params.get("n_workers", 1),
+        use_fsdp=params.get("use_fsdp", True),
+        sync_module_states=params.get("sync_module_states", True),
     )
 
 

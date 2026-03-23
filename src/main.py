@@ -4,6 +4,7 @@ from data.loaders import load_breast_cancer_dataset
 from algorithms.sklearn_wrappers import create_baseline_svc, create_cascade_svc
 from algorithms.sklearn_wrappers import create_baseline_mlp
 from algorithms.sklearn_wrappers import create_dualpipe_classifier
+from algorithms.sklearn_wrappers import create_fsdp_mlp
 from algorithms.sklearn_wrappers import create_baseline_rf
 from algorithms.sklearn_wrappers import create_hybrid_rf
 from algorithms.sklearn_wrappers import create_baseline_knn
@@ -36,6 +37,19 @@ dualpipe_nn = AlgorithmConfig(
         "num_chunks": 8,
     },
     implementation=create_dualpipe_classifier,
+)
+
+fsdp_nn = AlgorithmConfig(
+    name="FSDPMLP",
+    parameters={
+        "hidden_layer_sizes": (100,),
+        "activation": "relu",
+        "solver": "adam",
+        "max_iter": 200,
+        "random_state": 42,
+        "use_fsdp": True,
+    },
+    implementation=create_fsdp_mlp,
 )
 
 # SVM configurations
@@ -128,6 +142,7 @@ runner = ExperimentRunner(
         cascade_svm,
         baseline_nn,
         dualpipe_nn,
+        fsdp_nn,
         baseline_rf,
         hybrid_rf,
         baseline_knn,
