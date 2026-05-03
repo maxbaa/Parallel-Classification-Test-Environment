@@ -12,13 +12,13 @@ algorithms:
   - name: ThunderSVC
     allowed_scenarios: [gpu_single]
   - name: BaselineMLP
-    allowed_scenarios: [cpu_sequential]
-  - name: DualPipeClassifier
     allowed_scenarios: [gpu_single]
+  - name: DualPipeClassifier
+    allowed_scenarios: [gpu_multi_2x]
     parameters:
       num_chunks: 8
   - name: FSDPMLP
-    allowed_scenarios: [gpu_single]
+    allowed_scenarios: [gpu_multi_2x]
     parameters:
       use_fsdp: true
   - name: BaselineRF
@@ -53,3 +53,8 @@ scenarios:
     parameters:
       device: cuda
       n_workers: 1
+  - name: gpu_multi_2x
+    description: Two-GPU run.
+    parameters:
+      device: cuda
+      n_workers: 2

@@ -15,18 +15,18 @@ algorithms:
     allowed_scenarios: [gpu_single]
     allowed_datasets: [breast_cancer_csv, covtype_csv]
   - name: BaselineMLP
-    allowed_scenarios: [cpu_sequential]
+    allowed_scenarios: [gpu_single]
     parameters:
       batch_size: 4096
       max_iter: 50
   - name: DualPipeClassifier
-    allowed_scenarios: [gpu_single]
+    allowed_scenarios: [gpu_multi_2x]
     parameters:
       batch_size: 4096
       max_iter: 50
       num_chunks: 8
   - name: FSDPMLP
-    allowed_scenarios: [gpu_single]
+    allowed_scenarios: [gpu_multi_2x]
     parameters:
       batch_size: 4096
       max_iter: 50

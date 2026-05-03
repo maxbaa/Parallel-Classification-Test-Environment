@@ -8,6 +8,7 @@ try:
     import torch
     import torch.distributed as dist
     from torch import nn
+    from torch.utils.data.distributed import DistributedSampler
     from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
     from torch.utils.data import DataLoader, TensorDataset
     _TORCH_IMPORT_ERROR = None
@@ -17,6 +18,7 @@ except ImportError as exc:
     nn = None
     FSDP = None
     DataLoader = None
+    DistributedSampler = None
     TensorDataset = None
     _TORCH_IMPORT_ERROR = exc
 
@@ -179,13 +181,24 @@ class FSDPMLP(ClassifierMixin, BaseEstimator):
         generator = torch.Generator()
         generator.manual_seed(self.random_state)
 
+        sampler = None
+        if self._fsdp_ready() and DistributedSampler is not None:
+            sampler = DistributedSampler(
+                TensorDataset(X_tensor, y_tensor),
+                num_replicas=dist.get_world_size(),
+                rank=dist.get_rank(),
+                shuffle=self.shuffle,
+                seed=self.random_state,
+            )
+
         return DataLoader(
             TensorDataset(X_tensor, y_tensor),
             batch_size=self._get_batch_size(len(X)),
-            shuffle=self.shuffle,
+            shuffle=self.shuffle if sampler is None else False,
+            sampler=sampler,
             generator=generator,
             pin_memory=self.device_.type == "cuda",
-        )
+        ), sampler
 
     def _evaluate_loss(self, X, y, criterion):
         X_tensor = torch.tensor(X, dtype=torch.float32, device=self.device_)
@@ -238,13 +251,15 @@ class FSDPMLP(ClassifierMixin, BaseEstimator):
         criterion = (
             nn.BCEWithLogitsLoss() if self._is_binary else nn.CrossEntropyLoss()
         )
-        train_loader = self._create_loader(X_train, y_train)
+        train_loader, train_sampler = self._create_loader(X_train, y_train)
 
         best_state = copy.deepcopy(self.model_.state_dict())
         best_loss = float("inf")
         stale_epochs = 0
 
         for epoch in range(self.max_iter):
+            if train_sampler is not None:
+                train_sampler.set_epoch(epoch)
             self.model_.train()
             epoch_loss = 0.0
 
@@ -263,7 +278,14 @@ class FSDPMLP(ClassifierMixin, BaseEstimator):
                 optimizer.step()
                 epoch_loss += loss.item() * len(X_batch)
 
-            monitored_loss = epoch_loss / len(train_loader.dataset)
+            epoch_loss_tensor = torch.tensor(
+                [epoch_loss, float(len(train_loader.dataset))],
+                dtype=torch.float64,
+                device=self.device_,
+            )
+            if self._fsdp_ready():
+                dist.all_reduce(epoch_loss_tensor, op=dist.ReduceOp.SUM)
+            monitored_loss = epoch_loss_tensor[0].item() / max(epoch_loss_tensor[1].item(), 1.0)
             if X_val is not None and y_val is not None:
                 monitored_loss = self._evaluate_loss(X_val, y_val, criterion)
 

@@ -5,6 +5,8 @@ Central experiment controler that runs algorithms on datasets under different sc
 
 from __future__ import annotations
 from dataclasses import dataclass, asdict
+from pathlib import Path
+from types import SimpleNamespace
 from typing import List, Dict, Any
 import json
 import time
@@ -12,6 +14,7 @@ import traceback
 import pandas as pd
 
 from .configs import AlgorithmConfig, DatasetConfig, ScenarioConfig
+from .distributed_runner import requires_distributed_execution, run_distributed_training
 from .monitoring import ResourceMonitor
 from .metrics import compute_quality_metrics
 from .tuning import fit_with_hyperparameter_search
@@ -103,21 +106,46 @@ class ExperimentRunner:
 
                             with ResourceMonitor(enable_gpu=self.enable_gpu_monitoring) as monitor:
                                 t0 = time.perf_counter()
-                                base_estimator = algo_cfg.implementation(final_algo_params)
-                                tuning_result = fit_with_hyperparameter_search(
-                                    algorithm_config=algo_cfg,
-                                    estimator=base_estimator,
-                                    X_train=X_train,
-                                    y_train=y_train,
-                                )
+                                if requires_distributed_execution(algo_cfg.name, final_algo_params):
+                                    distributed_result = run_distributed_training(
+                                        algorithm_name=algo_cfg.name,
+                                        algorithm_params=final_algo_params,
+                                        X_train=X_train,
+                                        X_test=X_test,
+                                        y_train=y_train,
+                                        y_test=y_test,
+                                        workdir=Path.cwd(),
+                                    )
+                                    tuning_result = None
+                                else:
+                                    base_estimator = algo_cfg.implementation(final_algo_params)
+                                    tuning_result = fit_with_hyperparameter_search(
+                                        algorithm_config=algo_cfg,
+                                        estimator=base_estimator,
+                                        X_train=X_train,
+                                        y_train=y_train,
+                                    )
                                 t1 = time.perf_counter()
 
                             snapshot = monitor.get_snapshot()
                             train_time = t1 - t0
                             sec_per_sample = train_time / n_train_samples
 
-                            model = tuning_result.estimator
-                            qm = compute_quality_metrics(model, X_test, y_test)
+                            if tuning_result is not None:
+                                model = tuning_result.estimator
+                                qm = compute_quality_metrics(model, X_test, y_test)
+                                search_strategy = tuning_result.search_strategy
+                                cv_folds = tuning_result.cv_folds
+                                evaluated_candidates = tuning_result.evaluated_candidates
+                                best_cv_score = tuning_result.best_score
+                                best_params_json = json.dumps(tuning_result.best_params, sort_keys=True)
+                            else:
+                                qm = SimpleNamespace(**distributed_result.metrics)
+                                search_strategy = "disabled_distributed"
+                                cv_folds = 0
+                                evaluated_candidates = 0
+                                best_cv_score = float("nan")
+                                best_params_json = json.dumps(final_algo_params, sort_keys=True)
 
                             run_result = SingleRunResult(
                                 algorithm=algo_cfg.name,
@@ -130,11 +158,11 @@ class ExperimentRunner:
                                 error_message="",
                                 n_train_samples=n_train_samples,
                                 n_test_samples=n_test_samples,
-                                search_strategy=tuning_result.search_strategy,
-                                cv_folds=tuning_result.cv_folds,
-                                evaluated_candidates=tuning_result.evaluated_candidates,
-                                best_cv_score=tuning_result.best_score,
-                                best_params_json=json.dumps(tuning_result.best_params, sort_keys=True),
+                                search_strategy=search_strategy,
+                                cv_folds=cv_folds,
+                                evaluated_candidates=evaluated_candidates,
+                                best_cv_score=best_cv_score,
+                                best_params_json=best_params_json,
                                 accuracy=qm.accuracy,
                                 precision=qm.precision,
                                 recall=qm.recall,
