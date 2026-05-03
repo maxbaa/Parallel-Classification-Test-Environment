@@ -1,44 +1,22 @@
-run_name: scientific_method_comparison
+run_name: scaling_analysis
 output_dir: results
 repetitions: 1
 enable_gpu_monitoring: true
 continue_on_error: true
 
 algorithms:
-  - name: BaselineSVC
-    allowed_scenarios: [cpu_sequential]
-    allowed_datasets: [breast_cancer_csv, covtype_csv]
-  - name: CascadeSVC
-    allowed_scenarios: [cpu_sequential]
-    allowed_datasets: [breast_cancer_csv, covtype_csv]
-  - name: ThunderSVC
-    allowed_scenarios: [gpu_single]
-    allowed_datasets: [breast_cancer_csv, covtype_csv]
-  - name: BaselineMLP
-    allowed_scenarios: [cpu_sequential]
-    parameters:
-      batch_size: 4096
-      max_iter: 50
-  - name: DualPipeClassifier
-    allowed_scenarios: [gpu_single]
-    parameters:
-      batch_size: 4096
-      max_iter: 50
-      num_chunks: 8
-  - name: FSDPMLP
-    allowed_scenarios: [gpu_single]
-    parameters:
-      batch_size: 4096
-      max_iter: 50
-      use_fsdp: true
   - name: BaselineRF
     allowed_scenarios: [cpu_sequential]
+    allowed_datasets: [covtype_csv, airline_csv, higgs_csv]
   - name: HybridRF
     allowed_scenarios: [cpu_parallel]
+    allowed_datasets: [covtype_csv, airline_csv, higgs_csv]
   - name: BaselineKNN
     allowed_scenarios: [cpu_sequential]
+    allowed_datasets: [covtype_csv, airline_csv, higgs_csv]
   - name: CuMLKNN
     allowed_scenarios: [gpu_single]
+    allowed_datasets: [covtype_csv, airline_csv, higgs_csv]
   - name: CuMLMultiGPUKNN
     allowed_scenarios: [gpu_multi_2x]
     allowed_datasets: [covtype_csv, airline_csv, higgs_csv]
@@ -47,8 +25,6 @@ algorithms:
       chunk_size: 250000
 
 datasets:
-  - name: breast_cancer_csv
-    loader: breast_cancer_csv
   - name: covtype_csv
     loader: covtype_csv
   - name: airline_csv
@@ -67,17 +43,17 @@ scenarios:
       device: cpu
       n_workers: 1
   - name: cpu_parallel
-    description: CPU-parallel run for methods with explicit multiprocessing.
+    description: CPU-parallel run for multiprocessing-based methods.
     parameters:
       device: cpu
       n_workers: 4
   - name: gpu_single
-    description: Single-GPU run on the server.
+    description: Single-GPU scaling reference.
     parameters:
       device: cuda
       n_workers: 1
   - name: gpu_multi_2x
-    description: Two-GPU run using both server GPUs.
+    description: Two-GPU scaling run.
     parameters:
       device: cuda
       n_workers: 2

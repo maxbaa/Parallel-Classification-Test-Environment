@@ -1,4 +1,4 @@
-run_name: full_benchmark
+run_name: small_method_comparison
 output_dir: results
 repetitions: 3
 enable_gpu_monitoring: true
@@ -6,33 +6,29 @@ continue_on_error: true
 
 algorithms:
   - name: BaselineSVC
-    allowed_scenarios: [cpu_only]
+    allowed_scenarios: [cpu_sequential]
   - name: CascadeSVC
-    allowed_scenarios: [cpu_only]
+    allowed_scenarios: [cpu_sequential]
   - name: ThunderSVC
-    allowed_scenarios: [single_gpu, multi_gpu_2x]
+    allowed_scenarios: [gpu_single]
   - name: BaselineMLP
-    allowed_scenarios: [cpu_only]
+    allowed_scenarios: [cpu_sequential]
   - name: DualPipeClassifier
-    allowed_scenarios: [single_gpu]
+    allowed_scenarios: [gpu_single]
     parameters:
       num_chunks: 8
   - name: FSDPMLP
-    allowed_scenarios: [single_gpu]
+    allowed_scenarios: [gpu_single]
     parameters:
       use_fsdp: true
   - name: BaselineRF
-    allowed_scenarios: [cpu_only]
+    allowed_scenarios: [cpu_sequential]
   - name: HybridRF
-    allowed_scenarios: [cpu_only]
+    allowed_scenarios: [cpu_parallel]
   - name: BaselineKNN
-    allowed_scenarios: [cpu_only]
+    allowed_scenarios: [cpu_sequential]
   - name: CuMLKNN
-    allowed_scenarios: [single_gpu]
-  - name: CuMLMultiGPUKNN
-    allowed_scenarios: [multi_gpu_2x]
-    parameters:
-      n_workers: 2
+    allowed_scenarios: [gpu_single]
 
 datasets:
   - name: breast_cancer_csv
@@ -42,18 +38,18 @@ datasets:
       random_state: 42
 
 scenarios:
-  - name: cpu_only
-    description: CPU-only baseline run.
+  - name: cpu_sequential
+    description: Sequential CPU reference run.
     parameters:
       device: cpu
       n_workers: 1
-  - name: single_gpu
+  - name: cpu_parallel
+    description: CPU-parallel run for multiprocessing-based methods.
+    parameters:
+      device: cpu
+      n_workers: 4
+  - name: gpu_single
     description: Single-GPU run.
     parameters:
       device: cuda
       n_workers: 1
-  - name: multi_gpu_2x
-    description: Two-GPU run.
-    parameters:
-      n_workers: 2
-      device: cuda

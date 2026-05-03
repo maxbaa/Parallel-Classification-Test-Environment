@@ -370,6 +370,7 @@ def build_algorithm_configs(entries: list[dict[str, Any]]) -> list[AlgorithmConf
                     random_state=int(search_overrides.get("random_state", search_defaults.get("random_state", 42))),
                 ),
                 allowed_scenarios=list(entry.get("allowed_scenarios", [])),
+                allowed_datasets=list(entry.get("allowed_datasets", [])),
             )
         )
     return configs

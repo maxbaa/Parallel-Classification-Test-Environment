@@ -23,10 +23,16 @@ Fuer einen schnellen Funktionstest ohne langen Vollbenchmark:
 python -m pcte_cli --config configs/smoke_test.yaml
 ```
 
-Fuer den 2-GPU-Serverlauf mit den CSV-Datasets:
+Fuer den wissenschaftlichen Methodenvergleich auf dem 2-GPU-Server:
 
 ```bash
 python -m pcte_cli --config configs/two_gpu_server.yaml
+```
+
+Fuer die getrennte Skalierungsanalyse auf groesseren Datensaetzen:
+
+```bash
+python -m pcte_cli --config configs/scaling_two_gpu.yaml
 ```
 
 ## Ergebnisstruktur
@@ -53,11 +59,14 @@ Die YAML-Datei steuert:
 - welche Hyperparameter via Cross-Validation durchsucht werden
 - wohin Ergebnisse geschrieben werden
 
-Typisches Muster fuer Hardware-Vergleiche:
+Typisches Muster fuer einen wissenschaftlich saubereren Vergleich:
 
-- CPU-Baselines nur in `cpu_only`
-- Single-GPU-Varianten nur in `single_gpu`
-- echte 2-GPU-Varianten nur in `multi_gpu_2x`
+- `cpu_sequential` fuer sequentielle Referenzverfahren
+- `cpu_parallel` fuer explizit CPU-parallele Varianten
+- `gpu_single` fuer GPU-native Einzelgeraeteverfahren
+- `gpu_multi_2x` nur fuer Verfahren mit echter 2-GPU-Unterstuetzung
+
+Zusaetzlich koennen Algorithmen ueber `allowed_datasets` auf sinnvolle Datensaetze begrenzt werden, damit z.B. SVM-Varianten nicht auf unpassenden Big-Data-Lasten laufen.
 
 Fuer CSV-Datensaetze kannst du den Loader `csv_classification` verwenden und `path` plus `target_column` setzen.
 

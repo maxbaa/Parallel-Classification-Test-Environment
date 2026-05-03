@@ -73,6 +73,8 @@ class ExperimentRunner:
 
         for dataset_cfg in self.datasets:
             for algo_cfg in self.algorithms:
+                if algo_cfg.allowed_datasets and dataset_cfg.name not in algo_cfg.allowed_datasets:
+                    continue
                 for scen_cfg in self.scenarios:
                     if algo_cfg.allowed_scenarios and scen_cfg.name not in algo_cfg.allowed_scenarios:
                         continue

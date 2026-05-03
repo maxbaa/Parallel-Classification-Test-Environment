@@ -28,6 +28,7 @@ class AlgorithmConfig:
     implementation: Callable
     search: "SearchConfig" = field(default_factory=lambda: SearchConfig())
     allowed_scenarios: list[str] = field(default_factory=list)
+    allowed_datasets: list[str] = field(default_factory=list)
 
 @dataclass
 class DatasetConfig:
