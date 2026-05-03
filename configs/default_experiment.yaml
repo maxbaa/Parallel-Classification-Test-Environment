@@ -1,0 +1,42 @@
+run_name: full_benchmark
+output_dir: results
+repetitions: 3
+enable_gpu_monitoring: true
+continue_on_error: true
+
+algorithms:
+  - name: BaselineSVC
+  - name: CascadeSVC
+  - name: ThunderSVC
+  - name: BaselineMLP
+  - name: DualPipeClassifier
+    parameters:
+      num_chunks: 8
+  - name: FSDPMLP
+    parameters:
+      use_fsdp: true
+  - name: BaselineRF
+  - name: HybridRF
+  - name: BaselineKNN
+  - name: CuMLKNN
+  - name: CuMLMultiGPUKNN
+    parameters:
+      n_workers: 2
+
+datasets:
+  - name: breast_cancer_csv
+    loader: breast_cancer_csv
+    parameters:
+      test_size: 0.25
+      random_state: 42
+
+scenarios:
+  - name: single_worker
+    description: Baseline run on one worker.
+    parameters:
+      n_workers: 1
+  - name: multi_gpu_server
+    description: Example profile for a multi-GPU server.
+    parameters:
+      n_workers: 4
+      device: cuda

@@ -1,3 +1,4 @@
+import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.ensemble import RandomForestClassifier
 
@@ -46,6 +47,8 @@ class BaselineRF(ClassifierMixin, BaseEstimator):
         self.max_samples = max_samples
 
     def fit(self, X, y):
+        X = np.asarray(X)
+        y = np.asarray(y)
         self.model_ = RandomForestClassifier(
             n_estimators=self.n_estimators,
             criterion=self.criterion,
@@ -67,6 +70,8 @@ class BaselineRF(ClassifierMixin, BaseEstimator):
             max_samples=self.max_samples,
         )
         self.model_.fit(X, y)
+        self.classes_ = self.model_.classes_
+        self.n_features_in_ = X.shape[1]
         return self
 
     def predict(self, X):
@@ -77,4 +82,3 @@ class BaselineRF(ClassifierMixin, BaseEstimator):
 
     def decision_function(self, X):
         return self.model_.predict_proba(X)[:, 1]
-

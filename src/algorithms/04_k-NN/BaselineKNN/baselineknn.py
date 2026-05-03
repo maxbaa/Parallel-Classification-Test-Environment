@@ -1,3 +1,4 @@
+import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.neighbors import KNeighborsClassifier
 
@@ -26,6 +27,8 @@ class BaselineKNN(ClassifierMixin, BaseEstimator):
         self.n_jobs = n_jobs
 
     def fit(self, X, y):
+        X = np.asarray(X)
+        y = np.asarray(y)
         self.model_ = KNeighborsClassifier(
             n_neighbors=self.n_neighbors,
             weights=self.weights,
@@ -37,6 +40,8 @@ class BaselineKNN(ClassifierMixin, BaseEstimator):
             n_jobs=self.n_jobs,
         )
         self.model_.fit(X, y)
+        self.classes_ = self.model_.classes_
+        self.n_features_in_ = X.shape[1]
         return self
 
     def predict(self, X):
@@ -47,4 +52,3 @@ class BaselineKNN(ClassifierMixin, BaseEstimator):
 
     def decision_function(self, X):
         return self.model_.predict_proba(X)[:, 1]
-

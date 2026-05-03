@@ -14,6 +14,7 @@ import psutil
 from typing import List
 import numpy as np
 import threading
+import subprocess
 
 try:
     import torch
@@ -49,6 +50,33 @@ class ResourceMonitor:
         self._ram_samples: List[float] = []
         self._gpu_max_gb: float = 0.0
 
+    def _query_gpu_memory_gb(self) -> float:
+        try:
+            result = subprocess.run(
+                [
+                    "nvidia-smi",
+                    "--query-gpu=memory.used",
+                    "--format=csv,noheader,nounits",
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            values_mb = [
+                float(line.strip())
+                for line in result.stdout.splitlines()
+                if line.strip()
+            ]
+            if values_mb:
+                return sum(values_mb) / 1024.0
+        except Exception:
+            pass
+
+        if self.enable_gpu and TORCH_AVAILABLE and torch.cuda.is_available():
+            return torch.cuda.memory_allocated() / (1024 ** 3)
+
+        return 0.0
+
     def _poll(self):
         process = psutil.Process()
         process.cpu_percent(interval=None)
@@ -60,8 +88,8 @@ class ResourceMonitor:
             self._cpu_samples.append(cpu)
             self._ram_samples.append(ram)
 
-            if self.enable_gpu and TORCH_AVAILABLE and torch.cuda.is_available():
-                current_alloc = torch.cuda.memory_allocated() / (1024 ** 3)
+            if self.enable_gpu:
+                current_alloc = self._query_gpu_memory_gb()
                 self._gpu_max_gb = max(self._gpu_max_gb, current_alloc)
 
             time.sleep(self.interval)
@@ -82,8 +110,8 @@ class ResourceMonitor:
         if self._thread is not None:
             self._thread.join()
 
-        if self.enable_gpu and TORCH_AVAILABLE and torch.cuda.is_available():
-            peak = torch.cuda.max_memory_allocated() / (1024 ** 3)
+        if self.enable_gpu:
+            peak = self._query_gpu_memory_gb()
             self._gpu_max_gb = max(self._gpu_max_gb, peak)
 
     def get_snapshot(self) -> ResourceSnapshot:

@@ -1,3 +1,4 @@
+import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 
 try:
@@ -52,6 +53,8 @@ class ThunderSVC(ClassifierMixin, BaseEstimator):
 
     def fit(self, X, y):
         self._require_thundersvm()
+        X = np.asarray(X)
+        y = np.asarray(y)
         self.model_ = ThunderSVMClassifier(
             C=self.C,
             kernel=self.kernel,
@@ -69,6 +72,8 @@ class ThunderSVC(ClassifierMixin, BaseEstimator):
             random_state=self.random_state,
         )
         self.model_.fit(X, y)
+        self.classes_ = np.unique(y)
+        self.n_features_in_ = X.shape[1]
         return self
 
     def predict(self, X):

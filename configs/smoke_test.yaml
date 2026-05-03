@@ -1,0 +1,25 @@
+run_name: smoke_test
+output_dir: results
+repetitions: 1
+enable_gpu_monitoring: true
+continue_on_error: true
+
+algorithms:
+  - name: BaselineSVC
+    search:
+      enabled: false
+  - name: BaselineRF
+    search:
+      enabled: false
+
+datasets:
+  - name: breast_cancer_csv
+    loader: breast_cancer_csv
+    parameters:
+      test_size: 0.25
+      random_state: 42
+
+scenarios:
+  - name: single_worker
+    parameters:
+      n_workers: 1

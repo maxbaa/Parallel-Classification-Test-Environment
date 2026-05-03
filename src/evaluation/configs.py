@@ -7,7 +7,7 @@ This module contains basic Datamodels for:
 - Scenario configuration --> Which variation of the experiments do i want to run?
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Dict, Any, Tuple
 import numpy as np
 
@@ -26,6 +26,7 @@ class AlgorithmConfig:
     name: str
     parameters: Dict[str, Any]
     implementation: Callable
+    search: "SearchConfig" = field(default_factory=lambda: SearchConfig())
 
 @dataclass
 class DatasetConfig:
@@ -37,6 +38,7 @@ class DatasetConfig:
         base_params (Dict[str, Any]): Base parameters for dataset loading (e.g. preprocessing options).
     """
     name: str
+    loader_name: str
     load_data: Callable[[Dict[str, Any]], Tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]]
     base_params: Dict[str, Any]
 
@@ -50,3 +52,32 @@ class ScenarioConfig:
     """
     name: str
     params: Dict[str, Any]
+    description: str = ""
+
+
+@dataclass
+class ExperimentDefinition:
+    """Top-level experiment definition used by the CLI entrypoint."""
+
+    run_name: str
+    repetitions: int
+    output_dir: str
+    enable_gpu_monitoring: bool
+    continue_on_error: bool
+    algorithms: list[AlgorithmConfig]
+    datasets: list[DatasetConfig]
+    scenarios: list[ScenarioConfig]
+
+
+@dataclass
+class SearchConfig:
+    """Hyperparameter search configuration for one algorithm."""
+
+    enabled: bool = True
+    strategy: str = "grid"
+    param_grid: Dict[str, list[Any]] = field(default_factory=dict)
+    cv_folds: int = 3
+    scoring: str = "f1_weighted"
+    n_iter: int | None = None
+    n_jobs: int = 1
+    random_state: int = 42

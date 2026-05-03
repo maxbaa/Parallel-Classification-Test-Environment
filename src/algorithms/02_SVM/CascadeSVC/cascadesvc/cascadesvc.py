@@ -61,6 +61,7 @@ class CascadeSVC(ClassifierMixin, BaseEstimator):
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> Self:
         X, y = check_X_y(X, y)
+        self.n_features_in_ = X.shape[1]
         self.classes_, y = np.unique(y, return_inverse=True)
         if X.shape[0] < 2*self.fold_size:
             print("The number of instances is lower than 2*fold_size. A single SVC classifier is fitted.")

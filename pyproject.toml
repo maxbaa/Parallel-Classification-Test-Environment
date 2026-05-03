@@ -13,8 +13,12 @@ dependencies = [
     "torch",
     "thundersvm",
     "pyyaml",
+    "matplotlib",
     "typing-extensions",
 ]
+
+[project.scripts]
+pcte-run = "pcte_cli:main"
 
 [build-system]
 requires = ["setuptools>=61.0"]

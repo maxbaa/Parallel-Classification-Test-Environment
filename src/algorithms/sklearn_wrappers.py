@@ -16,6 +16,20 @@ def _load_baseline_knn():
     return module.BaselineKNN
 
 
+def _load_cuml_knn():
+    module_path = (
+        Path(__file__).resolve().parent
+        / "04_k-NN"
+        / "CuMLKNN"
+        / "cumlknn.py"
+    )
+    spec = spec_from_file_location("cuml_knn_module", module_path)
+    module = module_from_spec(spec)
+    assert spec is not None and spec.loader is not None
+    spec.loader.exec_module(module)
+    return module.CuMLKNN, module.CuMLMultiGPUKNN
+
+
 def _load_baseline_mlp():
     baseline_module_path = (
         Path(__file__).resolve().parent
@@ -134,18 +148,9 @@ def _load_thunder_svc():
     return module.ThunderSVC
 
 
-BaselineKNN = _load_baseline_knn()
-BaselineMLP = _load_baseline_mlp()
-DualPipeClassifier = _load_dualpipe_classifier()
-FSDPMLP = _load_fsdp_mlp()
-BaselineRF = _load_baseline_rf()
-HybridRF = _load_hybrid_rf()
-BaselineSVC = _load_baseline_svc()
-CascadeSVC = _load_cascade_svc()
-ThunderSVC = _load_thunder_svc()
-
 def create_baseline_knn(params):
-    return BaselineKNN(
+    baseline_knn = _load_baseline_knn()
+    return baseline_knn(
         n_neighbors=params.get("n_neighbors", 5),
         weights=params.get("weights", "uniform"),
         algorithm=params.get("algorithm", "auto"),
@@ -161,8 +166,29 @@ def create_knn(params):
     return create_baseline_knn(params)
 
 
+def create_cuml_knn(params):
+    cuml_knn, _ = _load_cuml_knn()
+    return cuml_knn(
+        n_neighbors=params.get("n_neighbors", 5),
+        weights=params.get("weights", "uniform"),
+        metric=params.get("metric", "euclidean"),
+    )
+
+
+def create_cuml_multi_gpu_knn(params):
+    _, cuml_multi_gpu_knn = _load_cuml_knn()
+    return cuml_multi_gpu_knn(
+        n_neighbors=params.get("n_neighbors", 5),
+        weights=params.get("weights", "uniform"),
+        metric=params.get("metric", "euclidean"),
+        n_workers=params.get("n_workers", 2),
+        chunk_size=params.get("chunk_size", 100000),
+    )
+
+
 def create_baseline_mlp(params):
-    return BaselineMLP(
+    baseline_mlp = _load_baseline_mlp()
+    return baseline_mlp(
         hidden_layer_sizes=params.get("hidden_layer_sizes", (100,)),
         activation=params.get("activation", "relu"),
         solver=params.get("solver", "adam"),
@@ -183,7 +209,8 @@ def create_baseline_mlp(params):
 
 
 def create_dualpipe_classifier(params):
-    return DualPipeClassifier(
+    dualpipe_classifier = _load_dualpipe_classifier()
+    return dualpipe_classifier(
         hidden_layer_sizes=params.get("hidden_layer_sizes", (100,)),
         activation=params.get("activation", "relu"),
         solver=params.get("solver", "adam"),
@@ -206,7 +233,8 @@ def create_dualpipe_classifier(params):
 
 
 def create_fsdp_mlp(params):
-    return FSDPMLP(
+    fsdp_mlp = _load_fsdp_mlp()
+    return fsdp_mlp(
         hidden_layer_sizes=params.get("hidden_layer_sizes", (100,)),
         activation=params.get("activation", "relu"),
         solver=params.get("solver", "adam"),
@@ -230,7 +258,8 @@ def create_fsdp_mlp(params):
 
 
 def create_baseline_rf(params):
-    return BaselineRF(
+    baseline_rf = _load_baseline_rf()
+    return baseline_rf(
         n_estimators=params.get("n_estimators", 100),
         criterion=params.get("criterion", "gini"),
         max_depth=params.get("max_depth"),
@@ -253,7 +282,8 @@ def create_baseline_rf(params):
 
 
 def create_hybrid_rf(params):
-    return HybridRF(
+    hybrid_rf = _load_hybrid_rf()
+    return hybrid_rf(
         n_estimators=params.get("n_estimators", 100),
         max_depth=params.get("max_depth", 5),
         n_processes=params.get("n_workers", 1),
@@ -266,7 +296,8 @@ def create_rf(params):
 
 
 def create_cascade_svc(params):
-    return CascadeSVC(
+    cascade_svc = _load_cascade_svc()
+    return cascade_svc(
         fold_size=params.get("fold_size", 10_000),
         verbose=params.get("verbose", False),
         C=params.get("C", 1.0),
@@ -280,7 +311,8 @@ def create_cascade_svc(params):
 
 
 def create_baseline_svc(params):
-    return BaselineSVC(
+    baseline_svc = _load_baseline_svc()
+    return baseline_svc(
         C=params.get("C", 1.0),
         kernel=params.get("kernel", "rbf"),
         degree=params.get("degree", 3),
@@ -300,7 +332,8 @@ def create_baseline_svc(params):
 
 
 def create_thunder_svc(params):
-    return ThunderSVC(
+    thunder_svc = _load_thunder_svc()
+    return thunder_svc(
         C=params.get("C", 1.0),
         kernel=params.get("kernel", "rbf"),
         degree=params.get("degree", 3),

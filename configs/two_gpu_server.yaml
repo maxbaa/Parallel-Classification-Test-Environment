@@ -1,0 +1,58 @@
+run_name: two_gpu_server_full_benchmark
+output_dir: results
+repetitions: 1
+enable_gpu_monitoring: true
+continue_on_error: true
+
+algorithms:
+  - name: BaselineSVC
+  - name: CascadeSVC
+  - name: ThunderSVC
+  - name: BaselineMLP
+    parameters:
+      batch_size: 4096
+      max_iter: 50
+  - name: DualPipeClassifier
+    parameters:
+      batch_size: 4096
+      max_iter: 50
+      num_chunks: 8
+  - name: FSDPMLP
+    parameters:
+      batch_size: 4096
+      max_iter: 50
+      use_fsdp: true
+  - name: BaselineRF
+  - name: HybridRF
+  - name: BaselineKNN
+  - name: CuMLKNN
+  - name: CuMLMultiGPUKNN
+    parameters:
+      n_workers: 2
+      chunk_size: 250000
+
+datasets:
+  - name: breast_cancer_csv
+    loader: breast_cancer_csv
+  - name: covtype_csv
+    loader: covtype_csv
+  - name: airline_csv
+    loader: airline_csv
+    parameters:
+      n_rows: 3000000
+  - name: higgs_csv
+    loader: higgs_csv
+    parameters:
+      n_rows: 5000000
+
+scenarios:
+  - name: single_gpu
+    description: Single-GPU run on the server.
+    parameters:
+      device: cuda
+      n_workers: 1
+  - name: multi_gpu_2x
+    description: Two-GPU run using both server GPUs.
+    parameters:
+      device: cuda
+      n_workers: 2

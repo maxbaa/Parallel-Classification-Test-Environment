@@ -1,3 +1,4 @@
+import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.svm import SVC
 
@@ -40,6 +41,8 @@ class BaselineSVC(ClassifierMixin, BaseEstimator):
         self.random_state = random_state
 
     def fit(self, X, y):
+        X = np.asarray(X)
+        y = np.asarray(y)
         self.model_ = SVC(
             C=self.C,
             kernel=self.kernel,
@@ -58,6 +61,8 @@ class BaselineSVC(ClassifierMixin, BaseEstimator):
             random_state=self.random_state,
         )
         self.model_.fit(X, y)
+        self.classes_ = self.model_.classes_
+        self.n_features_in_ = X.shape[1]
         return self
 
     def predict(self, X):
@@ -68,4 +73,3 @@ class BaselineSVC(ClassifierMixin, BaseEstimator):
 
     def decision_function(self, X):
         return self.model_.decision_function(X)
-

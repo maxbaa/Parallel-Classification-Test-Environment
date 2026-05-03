@@ -1,0 +1,22 @@
+run_name: smoke_cv
+output_dir: results
+repetitions: 1
+enable_gpu_monitoring: false
+continue_on_error: true
+
+algorithms:
+  - name: BaselineKNN
+    search:
+      param_grid:
+        n_neighbors: [3, 5]
+        weights: ["uniform", "distance"]
+        metric: ["minkowski"]
+
+datasets:
+  - name: breast_cancer_csv
+    loader: breast_cancer_csv
+
+scenarios:
+  - name: single_worker
+    parameters:
+      n_workers: 1
