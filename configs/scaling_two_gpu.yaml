@@ -11,6 +11,9 @@ algorithms:
   - name: HybridRF
     allowed_scenarios: [cpu_parallel]
     allowed_datasets: [covtype_csv, airline_csv, higgs_csv]
+  - name: CuMLRF
+    allowed_scenarios: [gpu_single]
+    allowed_datasets: [covtype_csv, airline_csv, higgs_csv]
   - name: BaselineKNN
     allowed_scenarios: [cpu_sequential]
     allowed_datasets: [covtype_csv, airline_csv, higgs_csv]

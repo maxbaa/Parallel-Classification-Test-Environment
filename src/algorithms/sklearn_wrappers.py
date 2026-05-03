@@ -2,6 +2,16 @@ from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 import sys
 
+
+def _load_module(module_name: str, module_path: Path):
+    spec = spec_from_file_location(module_name, module_path)
+    module = module_from_spec(spec)
+    assert spec is not None and spec.loader is not None
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 def _load_baseline_knn():
     baseline_module_path = (
         Path(__file__).resolve().parent
@@ -9,10 +19,7 @@ def _load_baseline_knn():
         / "BaselineKNN"
         / "baselineknn.py"
     )
-    spec = spec_from_file_location("baseline_knn_module", baseline_module_path)
-    module = module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    spec.loader.exec_module(module)
+    module = _load_module("baseline_knn_module", baseline_module_path)
     return module.BaselineKNN
 
 
@@ -23,11 +30,8 @@ def _load_cuml_knn():
         / "CuMLKNN"
         / "cumlknn.py"
     )
-    spec = spec_from_file_location("cuml_knn_module", module_path)
-    module = module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    spec.loader.exec_module(module)
-    return module.CuMLKNN, module.CuMLMultiGPUKNN
+    module = _load_module("cuml_knn_module", module_path)
+    return module.CuMLKNN, module.CuMLMultiGPUKNN, module.CuMLRF
 
 
 def _load_baseline_mlp():
@@ -37,30 +41,19 @@ def _load_baseline_mlp():
         / "BaselineMLP"
         / "baselinemlp.py"
     )
-    spec = spec_from_file_location("baseline_mlp_module", baseline_module_path)
-    module = module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    spec.loader.exec_module(module)
+    module = _load_module("baseline_mlp_module", baseline_module_path)
     return module.BaselineMLP
 
 
-def _load_dualpipe_classifier():
-    package_dir = (
+def _load_gpipe_mlp():
+    module_path = (
         Path(__file__).resolve().parent
         / "01_NN"
-        / "DualPipe"
+        / "GPipeMLP"
+        / "gpipemlp.py"
     )
-    package_init = package_dir / "__init__.py"
-    spec = spec_from_file_location(
-        "dualpipe_classifier_package",
-        package_init,
-        submodule_search_locations=[str(package_dir)],
-    )
-    module = module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module.DualPipeClassifier
+    module = _load_module("gpipe_mlp_module", module_path)
+    return module.GPipeMLP
 
 
 def _load_fsdp_mlp():
@@ -70,10 +63,7 @@ def _load_fsdp_mlp():
         / "FSDPMLP"
         / "fsdpmlp.py"
     )
-    spec = spec_from_file_location("fsdp_mlp_module", module_path)
-    module = module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    spec.loader.exec_module(module)
+    module = _load_module("fsdp_mlp_module", module_path)
     return module.FSDPMLP
 
 
@@ -84,10 +74,7 @@ def _load_baseline_rf():
         / "BaselineRF"
         / "baselinerf.py"
     )
-    spec = spec_from_file_location("baseline_rf_module", baseline_module_path)
-    module = module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    spec.loader.exec_module(module)
+    module = _load_module("baseline_rf_module", baseline_module_path)
     return module.BaselineRF
 
 
@@ -98,10 +85,7 @@ def _load_hybrid_rf():
         / "HybridRF"
         / "hybridrf.py"
     )
-    spec = spec_from_file_location("hybrid_rf_module", hybrid_module_path)
-    module = module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    spec.loader.exec_module(module)
+    module = _load_module("hybrid_rf_module", hybrid_module_path)
     return module.HybridRF
 
 
@@ -112,10 +96,7 @@ def _load_baseline_svc():
         / "BaselineSVC"
         / "baselinesvc.py"
     )
-    spec = spec_from_file_location("baseline_svc_module", baseline_module_path)
-    module = module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    spec.loader.exec_module(module)
+    module = _load_module("baseline_svc_module", baseline_module_path)
     return module.BaselineSVC
 
 
@@ -127,10 +108,7 @@ def _load_cascade_svc():
         / "cascadesvc"
         / "cascadesvc.py"
     )
-    spec = spec_from_file_location("cascade_svc_module", cascade_module_path)
-    module = module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    spec.loader.exec_module(module)
+    module = _load_module("cascade_svc_module", cascade_module_path)
     return module.CascadeSVC
 
 
@@ -141,10 +119,7 @@ def _load_thunder_svc():
         / "ThunderSVC"
         / "thundersvc.py"
     )
-    spec = spec_from_file_location("thunder_svc_module", thunder_module_path)
-    module = module_from_spec(spec)
-    assert spec is not None and spec.loader is not None
-    spec.loader.exec_module(module)
+    module = _load_module("thunder_svc_module", thunder_module_path)
     return module.ThunderSVC
 
 
@@ -167,7 +142,7 @@ def create_knn(params):
 
 
 def create_cuml_knn(params):
-    cuml_knn, _ = _load_cuml_knn()
+    cuml_knn, _, _ = _load_cuml_knn()
     return cuml_knn(
         n_neighbors=params.get("n_neighbors", 5),
         weights=params.get("weights", "uniform"),
@@ -176,13 +151,24 @@ def create_cuml_knn(params):
 
 
 def create_cuml_multi_gpu_knn(params):
-    _, cuml_multi_gpu_knn = _load_cuml_knn()
+    _, cuml_multi_gpu_knn, _ = _load_cuml_knn()
     return cuml_multi_gpu_knn(
         n_neighbors=params.get("n_neighbors", 5),
         weights=params.get("weights", "uniform"),
         metric=params.get("metric", "euclidean"),
         n_workers=params.get("n_workers", 2),
         chunk_size=params.get("chunk_size", 100000),
+    )
+
+
+def create_cuml_rf(params):
+    _, _, cuml_rf = _load_cuml_knn()
+    return cuml_rf(
+        n_estimators=params.get("n_estimators", 100),
+        max_depth=params.get("max_depth", 16),
+        max_features=params.get("max_features", "sqrt"),
+        n_bins=params.get("n_bins", 128),
+        random_state=params.get("random_state", 42),
     )
 
 
@@ -208,9 +194,9 @@ def create_baseline_mlp(params):
     )
 
 
-def create_dualpipe_classifier(params):
-    dualpipe_classifier = _load_dualpipe_classifier()
-    return dualpipe_classifier(
+def create_gpipe_mlp(params):
+    gpipe_mlp = _load_gpipe_mlp()
+    return gpipe_mlp(
         hidden_layer_sizes=params.get("hidden_layer_sizes", (100,)),
         activation=params.get("activation", "relu"),
         solver=params.get("solver", "adam"),
@@ -226,9 +212,9 @@ def create_dualpipe_classifier(params):
         validation_fraction=params.get("validation_fraction", 0.1),
         n_iter_no_change=params.get("n_iter_no_change", 10),
         random_state=params.get("random_state", 42),
-        device=params.get("device"),
-        n_workers=params.get("n_workers", 1),
-        num_chunks=params.get("num_chunks", 8),
+        n_workers=params.get("n_workers", 2),
+        chunks=params.get("chunks", 8),
+        checkpoint=params.get("checkpoint", "except_last"),
     )
 
 

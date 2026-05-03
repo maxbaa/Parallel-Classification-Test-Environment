@@ -65,7 +65,8 @@ Typisches Muster fuer einen wissenschaftlich saubereren Vergleich:
 - `cpu_parallel` fuer explizit CPU-parallele Varianten
 - `gpu_single` fuer GPU-native Einzelgeraeteverfahren
 - `gpu_multi_2x` nur fuer Verfahren mit echter 2-GPU-Unterstuetzung
-- bei neuronalen Netzen sollte die Referenz sinnvollerweise ebenfalls auf `gpu_single` laufen, z.B. als PyTorch-Single-GPU-Baseline; verteilte Varianten wie `FSDPMLP` und `DualPipeClassifier` koennen separat auf `gpu_multi_2x` laufen
+- bei neuronalen Netzen sollte die Referenz sinnvollerweise ebenfalls auf `gpu_single` laufen, z.B. als PyTorch-Single-GPU-Baseline; verteilte Varianten wie `FSDPMLP` und `GPipeMLP` koennen separat auf `gpu_multi_2x` laufen
+- fuer Random Forests stehen nun sowohl `BaselineRF` und `HybridRF` auf CPU als auch `CuMLRF` auf GPU fuer den Direktvergleich bereit
 
 Zusaetzlich koennen Algorithmen ueber `allowed_datasets` auf sinnvolle Datensaetze begrenzt werden, damit z.B. SVM-Varianten nicht auf unpassenden Big-Data-Lasten laufen.
 

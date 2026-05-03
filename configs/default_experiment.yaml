@@ -13,10 +13,10 @@ algorithms:
     allowed_scenarios: [gpu_single]
   - name: BaselineMLP
     allowed_scenarios: [gpu_single]
-  - name: DualPipeClassifier
+  - name: GPipeMLP
     allowed_scenarios: [gpu_multi_2x]
     parameters:
-      num_chunks: 8
+      chunks: 8
   - name: FSDPMLP
     allowed_scenarios: [gpu_multi_2x]
     parameters:
@@ -25,6 +25,8 @@ algorithms:
     allowed_scenarios: [cpu_sequential]
   - name: HybridRF
     allowed_scenarios: [cpu_parallel]
+  - name: CuMLRF
+    allowed_scenarios: [gpu_single]
   - name: BaselineKNN
     allowed_scenarios: [cpu_sequential]
   - name: CuMLKNN

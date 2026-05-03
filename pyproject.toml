@@ -11,6 +11,7 @@ dependencies = [
     "scikit-learn",
     "psutil",
     "torch",
+    "torchgpipe",
     "thundersvm",
     "pyyaml",
     "matplotlib",

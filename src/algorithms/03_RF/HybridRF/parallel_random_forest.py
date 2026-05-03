@@ -217,7 +217,8 @@ class RandomForest:
         predictions = np.zeros((len(X), len(self.estimators)))
 
         for i, (tree, feature_indices) in enumerate(self.estimators):
-            predictions[:, i] = tree.predict(X[:, feature_indices])
+            X_subset = X if feature_indices is None else X[:, feature_indices]
+            predictions[:, i] = tree.predict(X_subset)
 
         return np.apply_along_axis(get_max_class, axis=1, arr=predictions, weights=self.weights)
 

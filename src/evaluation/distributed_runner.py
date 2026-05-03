@@ -18,7 +18,7 @@ class DistributedTrainingResult:
     execution_mode: str
 
 
-DISTRIBUTED_ALGORITHMS = {"FSDPMLP", "DualPipeClassifier"}
+DISTRIBUTED_ALGORITHMS = {"FSDPMLP"}
 
 
 def requires_distributed_execution(algorithm_name: str, algorithm_params: dict[str, Any]) -> bool:

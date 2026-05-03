@@ -1,5 +1,6 @@
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+import sys
 
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
@@ -10,6 +11,7 @@ def _load_parallel_random_forest():
     spec = spec_from_file_location("hybrid_parallel_rf_module", module_path)
     module = module_from_spec(spec)
     assert spec is not None and spec.loader is not None
+    sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module.RandomForest
 

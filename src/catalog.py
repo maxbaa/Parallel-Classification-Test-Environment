@@ -9,9 +9,10 @@ from algorithms.sklearn_wrappers import (
     create_baseline_svc,
     create_cascade_svc,
     create_cuml_knn,
+    create_cuml_rf,
     create_cuml_multi_gpu_knn,
-    create_dualpipe_classifier,
     create_fsdp_mlp,
+    create_gpipe_mlp,
     create_hybrid_rf,
     create_thunder_svc,
 )
@@ -49,15 +50,15 @@ ALGORITHM_REGISTRY: dict[str, dict[str, Any]] = {
             },
         },
     },
-    "DualPipeClassifier": {
-        "builder": create_dualpipe_classifier,
+    "GPipeMLP": {
+        "builder": create_gpipe_mlp,
         "default_parameters": {
             "hidden_layer_sizes": [100],
             "activation": "relu",
             "solver": "adam",
             "max_iter": 200,
             "random_state": 42,
-            "num_chunks": 8,
+            "chunks": 8,
         },
         "default_search": {
             "enabled": True,
@@ -67,7 +68,7 @@ ALGORITHM_REGISTRY: dict[str, dict[str, Any]] = {
             "param_grid": {
                 "hidden_layer_sizes": [(128,), (256, 128)],
                 "learning_rate_init": [1e-3, 5e-4],
-                "num_chunks": [4, 8],
+                "chunks": [4, 8],
             },
         },
     },
@@ -197,6 +198,26 @@ ALGORITHM_REGISTRY: dict[str, dict[str, Any]] = {
             },
         },
     },
+    "CuMLRF": {
+        "builder": create_cuml_rf,
+        "default_parameters": {
+            "n_estimators": 100,
+            "max_depth": 16,
+            "max_features": "sqrt",
+            "n_bins": 128,
+            "random_state": 42,
+        },
+        "default_search": {
+            "enabled": True,
+            "strategy": "grid",
+            "cv_folds": 3,
+            "scoring": "f1_weighted",
+            "param_grid": {
+                "n_estimators": [100, 200],
+                "max_depth": [8, 16],
+            },
+        },
+    },
     "BaselineKNN": {
         "builder": create_baseline_knn,
         "default_parameters": {
@@ -235,8 +256,8 @@ ALGORITHM_REGISTRY: dict[str, dict[str, Any]] = {
             "scoring": "f1_weighted",
             "param_grid": {
                 "n_neighbors": [5, 11, 21],
-                "weights": ["uniform", "distance"],
-                "metric": ["euclidean", "manhattan"],
+                "weights": ["uniform"],
+                "metric": ["euclidean"],
             },
         },
     },
@@ -256,8 +277,8 @@ ALGORITHM_REGISTRY: dict[str, dict[str, Any]] = {
             "scoring": "f1_weighted",
             "param_grid": {
                 "n_neighbors": [5, 11, 21],
-                "weights": ["uniform", "distance"],
-                "metric": ["euclidean", "manhattan"],
+                "weights": ["uniform"],
+                "metric": ["euclidean"],
             },
         },
     },
