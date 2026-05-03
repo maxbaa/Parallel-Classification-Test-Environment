@@ -48,9 +48,16 @@ Die YAML-Datei steuert:
 - welche Algorithmen laufen
 - welche Datensaetze verwendet werden
 - welche Szenarien getestet werden
+- in welchen Szenarien ein Algorithmus ueber `allowed_scenarios` ueberhaupt laufen darf
 - wie oft jeder Run wiederholt wird
 - welche Hyperparameter via Cross-Validation durchsucht werden
 - wohin Ergebnisse geschrieben werden
+
+Typisches Muster fuer Hardware-Vergleiche:
+
+- CPU-Baselines nur in `cpu_only`
+- Single-GPU-Varianten nur in `single_gpu`
+- echte 2-GPU-Varianten nur in `multi_gpu_2x`
 
 Fuer CSV-Datensaetze kannst du den Loader `csv_classification` verwenden und `path` plus `target_column` setzen.
 

@@ -6,20 +6,31 @@ continue_on_error: true
 
 algorithms:
   - name: BaselineSVC
+    allowed_scenarios: [cpu_only]
   - name: CascadeSVC
+    allowed_scenarios: [cpu_only]
   - name: ThunderSVC
+    allowed_scenarios: [single_gpu, multi_gpu_2x]
   - name: BaselineMLP
+    allowed_scenarios: [cpu_only]
   - name: DualPipeClassifier
+    allowed_scenarios: [single_gpu]
     parameters:
       num_chunks: 8
   - name: FSDPMLP
+    allowed_scenarios: [single_gpu]
     parameters:
       use_fsdp: true
   - name: BaselineRF
+    allowed_scenarios: [cpu_only]
   - name: HybridRF
+    allowed_scenarios: [cpu_only]
   - name: BaselineKNN
+    allowed_scenarios: [cpu_only]
   - name: CuMLKNN
+    allowed_scenarios: [single_gpu]
   - name: CuMLMultiGPUKNN
+    allowed_scenarios: [multi_gpu_2x]
     parameters:
       n_workers: 2
 
@@ -31,12 +42,18 @@ datasets:
       random_state: 42
 
 scenarios:
-  - name: single_worker
-    description: Baseline run on one worker.
+  - name: cpu_only
+    description: CPU-only baseline run.
     parameters:
+      device: cpu
       n_workers: 1
-  - name: multi_gpu_server
-    description: Example profile for a multi-GPU server.
+  - name: single_gpu
+    description: Single-GPU run.
     parameters:
-      n_workers: 4
+      device: cuda
+      n_workers: 1
+  - name: multi_gpu_2x
+    description: Two-GPU run.
+    parameters:
+      n_workers: 2
       device: cuda

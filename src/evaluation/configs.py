@@ -27,6 +27,7 @@ class AlgorithmConfig:
     parameters: Dict[str, Any]
     implementation: Callable
     search: "SearchConfig" = field(default_factory=lambda: SearchConfig())
+    allowed_scenarios: list[str] = field(default_factory=list)
 
 @dataclass
 class DatasetConfig:
