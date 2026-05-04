@@ -5,24 +5,50 @@ enable_gpu_monitoring: true
 continue_on_error: true
 
 algorithms:
+  - name: BaselineSVC
+    allowed_scenarios: [cpu_sequential]
+    allowed_datasets: [higgs_csv]
+    parameters:
+      kernel: linear
+    search:
+      param_grid:
+        C: [0.5, 1.0, 2.0]
+  - name: CascadeSVC
+    allowed_scenarios: [cpu_sequential]
+    allowed_datasets: [higgs_csv]
+    parameters:
+      kernel: linear
+      fold_size: 50000
+    search:
+      param_grid:
+        C: [0.5, 1.0, 2.0]
+        fold_size: [25000, 50000]
+  - name: ThunderSVC
+    allowed_scenarios: [gpu_single]
+    allowed_datasets: [higgs_csv]
+    parameters:
+      kernel: linear
+    search:
+      param_grid:
+        C: [0.5, 1.0, 2.0]
   - name: BaselineRF
     allowed_scenarios: [cpu_sequential]
-    allowed_datasets: [covtype_csv, airline_csv, higgs_csv]
+    allowed_datasets: [covtype_csv, higgs_csv]
   - name: HybridRF
     allowed_scenarios: [cpu_parallel]
-    allowed_datasets: [covtype_csv, airline_csv, higgs_csv]
+    allowed_datasets: [covtype_csv, higgs_csv]
   - name: CuMLRF
     allowed_scenarios: [gpu_single]
-    allowed_datasets: [covtype_csv, airline_csv, higgs_csv]
+    allowed_datasets: [covtype_csv, higgs_csv]
   - name: BaselineKNN
     allowed_scenarios: [cpu_sequential]
-    allowed_datasets: [covtype_csv, airline_csv, higgs_csv]
+    allowed_datasets: [covtype_csv, higgs_csv]
   - name: CuMLKNN
     allowed_scenarios: [gpu_single]
-    allowed_datasets: [covtype_csv, airline_csv, higgs_csv]
+    allowed_datasets: [covtype_csv, higgs_csv]
   - name: CuMLMultiGPUKNN
     allowed_scenarios: [gpu_multi_2x]
-    allowed_datasets: [covtype_csv, airline_csv, higgs_csv]
+    allowed_datasets: [covtype_csv, higgs_csv]
     parameters:
       n_workers: 2
       chunk_size: 250000
@@ -30,10 +56,6 @@ algorithms:
 datasets:
   - name: covtype_csv
     loader: covtype_csv
-  - name: airline_csv
-    loader: airline_csv
-    parameters:
-      n_rows: 3000000
   - name: higgs_csv
     loader: higgs_csv
     parameters:

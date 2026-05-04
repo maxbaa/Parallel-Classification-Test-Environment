@@ -43,7 +43,7 @@ algorithms:
     allowed_scenarios: [gpu_single]
   - name: CuMLMultiGPUKNN
     allowed_scenarios: [gpu_multi_2x]
-    allowed_datasets: [covtype_csv, airline_csv, higgs_csv]
+    allowed_datasets: [covtype_csv, higgs_csv]
     parameters:
       n_workers: 2
       chunk_size: 250000
@@ -53,10 +53,6 @@ datasets:
     loader: breast_cancer_csv
   - name: covtype_csv
     loader: covtype_csv
-  - name: airline_csv
-    loader: airline_csv
-    parameters:
-      n_rows: 3000000
   - name: higgs_csv
     loader: higgs_csv
     parameters:
