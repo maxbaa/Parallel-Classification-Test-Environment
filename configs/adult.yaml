@@ -1,6 +1,6 @@
-run_name: small_method_comparison
+run_name: adult_benchmark
 output_dir: results
-repetitions: 3
+repetitions: 1
 enable_gpu_monitoring: true
 continue_on_error: true
 
@@ -13,13 +13,20 @@ algorithms:
     allowed_scenarios: [gpu_single]
   - name: BaselineMLP
     allowed_scenarios: [gpu_single]
+    parameters:
+      batch_size: 4096
+      max_iter: 50
   - name: GPipeMLP
     allowed_scenarios: [gpu_multi_2x]
     parameters:
+      batch_size: 4096
+      max_iter: 50
       chunks: 8
   - name: FSDPMLP
     allowed_scenarios: [gpu_multi_2x]
     parameters:
+      batch_size: 4096
+      max_iter: 50
       use_fsdp: true
   - name: BaselineRF
     allowed_scenarios: [cpu_sequential]
@@ -31,13 +38,15 @@ algorithms:
     allowed_scenarios: [cpu_sequential]
   - name: CuMLKNN
     allowed_scenarios: [gpu_single]
+  - name: CuMLMultiGPUKNN
+    allowed_scenarios: [gpu_multi_2x]
+    parameters:
+      n_workers: 2
+      chunk_size: 250000
 
 datasets:
-  - name: breast_cancer_csv
-    loader: breast_cancer_csv
-    parameters:
-      test_size: 0.25
-      random_state: 42
+  - name: adult_csv
+    loader: adult_csv
 
 scenarios:
   - name: cpu_sequential
@@ -46,17 +55,17 @@ scenarios:
       device: cpu
       n_workers: 1
   - name: cpu_parallel
-    description: CPU-parallel run for multiprocessing-based methods.
+    description: CPU-parallel run for methods with explicit multiprocessing.
     parameters:
       device: cpu
       n_workers: 4
   - name: gpu_single
-    description: Single-GPU run.
+    description: Single-GPU run on the server.
     parameters:
       device: cuda
       n_workers: 1
   - name: gpu_multi_2x
-    description: Two-GPU run.
+    description: Two-GPU run using both server GPUs.
     parameters:
       device: cuda
       n_workers: 2

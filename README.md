@@ -8,32 +8,24 @@ Standardmaessig wird fuer jedes Modell eine Cross-Validation-basierte Hyperparam
 
 ```bash
 pip install -e .
-python -m pcte_cli --config configs/default_experiment.yaml
+python -m pcte_cli --config configs/breast_cancer.yaml
 ```
 
 Alternativ kannst du nach der Installation den Konsolenbefehl verwenden:
 
 ```bash
-pcte-run --config configs/default_experiment.yaml
+pcte-run --config configs/breast_cancer.yaml
 ```
 
-Fuer einen schnellen Funktionstest ohne langen Vollbenchmark:
+Verfuegbare Benchmark-Configs pro Datensatz:
 
 ```bash
-python -m pcte_cli --config configs/smoke_test.yaml
+python -m pcte_cli --config configs/breast_cancer.yaml
+python -m pcte_cli --config configs/adult.yaml
+python -m pcte_cli --config configs/covtype.yaml
 ```
 
-Fuer den wissenschaftlichen Methodenvergleich auf dem 2-GPU-Server:
-
-```bash
-python -m pcte_cli --config configs/two_gpu_server.yaml
-```
-
-Fuer die getrennte Skalierungsanalyse auf groesseren Datensaetzen:
-
-```bash
-python -m pcte_cli --config configs/scaling_two_gpu.yaml
-```
+Beim groessten Datensatz `covtype_csv` werden die SVM-Varianten bewusst nur mit linearem Kernel konfiguriert.
 
 ## Ergebnisstruktur
 
@@ -75,9 +67,9 @@ Fuer CSV-Datensaetze kannst du den Loader `csv_classification` verwenden und `pa
 Vorkonfigurierte CSV-Presets:
 
 - `breast_cancer_csv`
-- `covtype_csv`
+- `adult_csv`
 - `airline_csv`
-- `higgs_csv`
+- `covtype_csv`
 
 ## GPU-Hinweis
 

@@ -1,4 +1,4 @@
-run_name: scientific_method_comparison
+run_name: covtype_benchmark
 output_dir: results
 repetitions: 1
 enable_gpu_monitoring: true
@@ -7,13 +7,17 @@ continue_on_error: true
 algorithms:
   - name: BaselineSVC
     allowed_scenarios: [cpu_sequential]
-    allowed_datasets: [breast_cancer_csv, covtype_csv]
+    parameters:
+      kernel: linear
   - name: CascadeSVC
     allowed_scenarios: [cpu_sequential]
-    allowed_datasets: [breast_cancer_csv, covtype_csv]
+    parameters:
+      kernel: linear
+      fold_size: 50000
   - name: ThunderSVC
     allowed_scenarios: [gpu_single]
-    allowed_datasets: [breast_cancer_csv, covtype_csv]
+    parameters:
+      kernel: linear
   - name: BaselineMLP
     allowed_scenarios: [gpu_single]
     parameters:
@@ -43,20 +47,13 @@ algorithms:
     allowed_scenarios: [gpu_single]
   - name: CuMLMultiGPUKNN
     allowed_scenarios: [gpu_multi_2x]
-    allowed_datasets: [covtype_csv, higgs_csv]
     parameters:
       n_workers: 2
       chunk_size: 250000
 
 datasets:
-  - name: breast_cancer_csv
-    loader: breast_cancer_csv
   - name: covtype_csv
     loader: covtype_csv
-  - name: higgs_csv
-    loader: higgs_csv
-    parameters:
-      n_rows: 5000000
 
 scenarios:
   - name: cpu_sequential

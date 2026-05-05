@@ -319,6 +319,15 @@ DATASET_REGISTRY: dict[str, dict[str, Any]] = {
             "random_state": 42,
         },
     },
+    "adult_csv": {
+        "loader": load_csv_classification_dataset,
+        "default_parameters": {
+            "path": "datasets/adult.csv",
+            "target_column": "income",
+            "test_size": 0.2,
+            "random_state": 42,
+        },
+    },
     "covtype_csv": {
         "loader": load_csv_classification_dataset,
         "default_parameters": {
@@ -334,16 +343,6 @@ DATASET_REGISTRY: dict[str, dict[str, Any]] = {
         "default_parameters": {
             "path": "datasets/airline.csv",
             "target_column": "Cancelled",
-            "test_size": 0.2,
-            "random_state": 42,
-        },
-    },
-    "higgs_csv": {
-        "loader": load_csv_classification_dataset,
-        "default_parameters": {
-            "path": "datasets/HIGGS.csv",
-            "header": "none",
-            "target_column": 0,
             "test_size": 0.2,
             "random_state": 42,
         },

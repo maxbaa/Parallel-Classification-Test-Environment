@@ -1,4 +1,4 @@
-run_name: scaling_analysis
+run_name: breast_cancer_benchmark
 output_dir: results
 repetitions: 1
 enable_gpu_monitoring: true
@@ -7,59 +7,46 @@ continue_on_error: true
 algorithms:
   - name: BaselineSVC
     allowed_scenarios: [cpu_sequential]
-    allowed_datasets: [higgs_csv]
-    parameters:
-      kernel: linear
-    search:
-      param_grid:
-        C: [0.5, 1.0, 2.0]
   - name: CascadeSVC
     allowed_scenarios: [cpu_sequential]
-    allowed_datasets: [higgs_csv]
-    parameters:
-      kernel: linear
-      fold_size: 50000
-    search:
-      param_grid:
-        C: [0.5, 1.0, 2.0]
-        fold_size: [25000, 50000]
   - name: ThunderSVC
     allowed_scenarios: [gpu_single]
-    allowed_datasets: [higgs_csv]
+  - name: BaselineMLP
+    allowed_scenarios: [gpu_single]
     parameters:
-      kernel: linear
-    search:
-      param_grid:
-        C: [0.5, 1.0, 2.0]
+      batch_size: 4096
+      max_iter: 50
+  - name: GPipeMLP
+    allowed_scenarios: [gpu_multi_2x]
+    parameters:
+      batch_size: 4096
+      max_iter: 50
+      chunks: 8
+  - name: FSDPMLP
+    allowed_scenarios: [gpu_multi_2x]
+    parameters:
+      batch_size: 4096
+      max_iter: 50
+      use_fsdp: true
   - name: BaselineRF
     allowed_scenarios: [cpu_sequential]
-    allowed_datasets: [covtype_csv, higgs_csv]
   - name: HybridRF
     allowed_scenarios: [cpu_parallel]
-    allowed_datasets: [covtype_csv, higgs_csv]
   - name: CuMLRF
     allowed_scenarios: [gpu_single]
-    allowed_datasets: [covtype_csv, higgs_csv]
   - name: BaselineKNN
     allowed_scenarios: [cpu_sequential]
-    allowed_datasets: [covtype_csv, higgs_csv]
   - name: CuMLKNN
     allowed_scenarios: [gpu_single]
-    allowed_datasets: [covtype_csv, higgs_csv]
   - name: CuMLMultiGPUKNN
     allowed_scenarios: [gpu_multi_2x]
-    allowed_datasets: [covtype_csv, higgs_csv]
     parameters:
       n_workers: 2
       chunk_size: 250000
 
 datasets:
-  - name: covtype_csv
-    loader: covtype_csv
-  - name: higgs_csv
-    loader: higgs_csv
-    parameters:
-      n_rows: 5000000
+  - name: breast_cancer_csv
+    loader: breast_cancer_csv
 
 scenarios:
   - name: cpu_sequential
@@ -68,17 +55,17 @@ scenarios:
       device: cpu
       n_workers: 1
   - name: cpu_parallel
-    description: CPU-parallel run for multiprocessing-based methods.
+    description: CPU-parallel run for methods with explicit multiprocessing.
     parameters:
       device: cpu
       n_workers: 4
   - name: gpu_single
-    description: Single-GPU scaling reference.
+    description: Single-GPU run on the server.
     parameters:
       device: cuda
       n_workers: 1
   - name: gpu_multi_2x
-    description: Two-GPU scaling run.
+    description: Two-GPU run using both server GPUs.
     parameters:
       device: cuda
       n_workers: 2

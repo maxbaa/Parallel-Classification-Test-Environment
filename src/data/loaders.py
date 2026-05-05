@@ -90,10 +90,11 @@ def load_csv_classification_dataset(params):
     test_size = float(params.get("test_size", 0.2))
     stratify = bool(params.get("stratify", True))
     header = _resolve_header_value(params.get("header", "infer"))
+    skipinitialspace = bool(params.get("skipinitialspace", False))
     n_rows = params.get("n_rows")
     drop_columns = params.get("drop_columns", [])
 
-    df = pd.read_csv(path, header=header, nrows=n_rows)
+    df = pd.read_csv(path, header=header, nrows=n_rows, skipinitialspace=skipinitialspace)
     if "column_names" in params:
         df.columns = list(params["column_names"])
 
