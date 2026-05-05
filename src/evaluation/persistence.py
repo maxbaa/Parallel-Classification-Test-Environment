@@ -72,6 +72,42 @@ def save_results_bundle(
     results_df.to_csv(run_dir / "raw" / "runs.csv", index=False)
     summary_df.to_csv(run_dir / "summary" / "aggregated_metrics.csv", index=False)
 
+    if "confusion_matrix_json" in results_df.columns:
+        confusion_records: list[dict[str, Any]] = []
+        for row in results_df.itertuples(index=False):
+            payload = getattr(row, "confusion_matrix_json", "")
+            if isinstance(payload, str) and payload.strip():
+                confusion_records.append(
+                    {
+                        "algorithm": row.algorithm,
+                        "dataset": row.dataset,
+                        "scenario": row.scenario,
+                        "run_index": row.run_index,
+                        "status": row.status,
+                        "confusion_matrix": json.loads(payload),
+                    }
+                )
+        with (run_dir / "raw" / "confusion_matrices.json").open("w", encoding="utf-8") as handle:
+            json.dump(confusion_records, handle, indent=2)
+
+    if "classification_report_json" in results_df.columns:
+        report_records: list[dict[str, Any]] = []
+        for row in results_df.itertuples(index=False):
+            payload = getattr(row, "classification_report_json", "")
+            if isinstance(payload, str) and payload.strip():
+                report_records.append(
+                    {
+                        "algorithm": row.algorithm,
+                        "dataset": row.dataset,
+                        "scenario": row.scenario,
+                        "run_index": row.run_index,
+                        "status": row.status,
+                        "classification_report": json.loads(payload),
+                    }
+                )
+        with (run_dir / "raw" / "classification_reports.json").open("w", encoding="utf-8") as handle:
+            json.dump(report_records, handle, indent=2)
+
     with (run_dir / "logs" / "failures.json").open("w", encoding="utf-8") as handle:
         json.dump(failures, handle, indent=2)
 

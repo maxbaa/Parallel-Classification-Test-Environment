@@ -6,6 +6,8 @@ from pathlib import Path
 
 import numpy as np
 
+from evaluation.metrics import compute_quality_metrics
+
 
 def _init_torch():
     import torch
@@ -15,33 +17,6 @@ def _init_torch():
     torch.cuda.set_device(local_rank)
     dist.init_process_group(backend="nccl")
     return torch, dist, local_rank
-
-
-def _compute_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_score: np.ndarray | None) -> dict[str, float | None]:
-    from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
-
-    y_true = np.asarray(y_true)
-    y_pred = np.asarray(y_pred)
-    labels = np.unique(y_true)
-    is_binary = len(labels) == 2
-
-    roc_auc = None
-    if y_score is not None:
-        try:
-            if is_binary:
-                roc_auc = float(roc_auc_score(y_true, y_score))
-            else:
-                roc_auc = float(roc_auc_score(y_true, y_score, multi_class="ovr", average="weighted"))
-        except Exception:
-            roc_auc = None
-
-    return {
-        "accuracy": float(accuracy_score(y_true, y_pred)),
-        "precision": float(precision_score(y_true, y_pred, average="weighted", zero_division=0)),
-        "recall": float(recall_score(y_true, y_pred, average="weighted", zero_division=0)),
-        "f1": float(f1_score(y_true, y_pred, average="weighted", zero_division=0)),
-        "roc_auc": roc_auc,
-    }
 
 
 def _run_fsdp(request: dict[str, object], X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray) -> dict[str, object]:
@@ -59,7 +34,17 @@ def _run_fsdp(request: dict[str, object], X_train: np.ndarray, X_test: np.ndarra
     elif hasattr(model, "decision_function"):
         y_score = model.decision_function(X_test)
 
-    result = _compute_metrics(y_test, y_pred, y_score)
+    metrics = compute_quality_metrics(model, X_test, y_test)
+    result = {
+        "accuracy": float(metrics.accuracy),
+        "balanced_accuracy": float(metrics.balanced_accuracy),
+        "precision": float(metrics.precision),
+        "recall": float(metrics.recall),
+        "f1": float(metrics.f1),
+        "roc_auc": metrics.roc_auc,
+        "confusion_matrix_json": metrics.confusion_matrix_json,
+        "classification_report_json": metrics.classification_report_json,
+    }
     result["execution_mode"] = getattr(model, "execution_mode_", "fsdp")
     return result
 

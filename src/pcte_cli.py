@@ -19,6 +19,7 @@ from evaluation.persistence import (
     save_results_bundle,
 )
 from evaluation.reporting import build_summary, generate_report_plots, write_summary_markdown
+from evaluation.reporting import build_failure_summary, write_summary_tables
 from evaluation.runner import ExperimentRunner
 
 
@@ -84,13 +85,16 @@ def main() -> None:
 
     results_df = runner.run()
     summary_df = build_summary(results_df)
+    failure_summary_df = build_failure_summary(results_df)
     plot_paths = generate_report_plots(results_df, summary_df, run_dir / "plots")
-    markdown_path = write_summary_markdown(summary_df, run_dir / "summary")
+    table_paths = write_summary_tables(summary_df, failure_summary_df, run_dir / "summary")
+    markdown_path = write_summary_markdown(summary_df, failure_summary_df, run_dir / "summary")
 
     metadata = {
         "run_name": experiment.run_name,
         "config_path": str(args.config),
         "plots": [str(path) for path in plot_paths],
+        "summary_tables": [str(path) for path in table_paths],
         "summary_markdown": str(markdown_path),
         "repetitions": experiment.repetitions,
         "continue_on_error": experiment.continue_on_error,

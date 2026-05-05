@@ -40,10 +40,13 @@ class SingleRunResult:
 
     # Quality metrics
     accuracy: float
+    balanced_accuracy: float
     precision: float
     recall: float
     f1: float
     roc_auc: float
+    confusion_matrix_json: str
+    classification_report_json: str
 
     # Timing
     train_time_sec: float
@@ -164,10 +167,13 @@ class ExperimentRunner:
                                 best_cv_score=best_cv_score,
                                 best_params_json=best_params_json,
                                 accuracy=qm.accuracy,
+                                balanced_accuracy=qm.balanced_accuracy,
                                 precision=qm.precision,
                                 recall=qm.recall,
                                 f1=qm.f1,
                                 roc_auc=qm.roc_auc if qm.roc_auc is not None else float("NaN"),
+                                confusion_matrix_json=qm.confusion_matrix_json,
+                                classification_report_json=qm.classification_report_json,
                                 train_time_sec=train_time,
                                 time_per_sample_sec=sec_per_sample,
                                 cpu_avg=snapshot.cpu_avg,
@@ -209,10 +215,13 @@ class ExperimentRunner:
                                         best_cv_score=float("NaN"),
                                         best_params_json="{}",
                                         accuracy=float("NaN"),
+                                        balanced_accuracy=float("NaN"),
                                         precision=float("NaN"),
                                         recall=float("NaN"),
                                         f1=float("NaN"),
                                         roc_auc=float("NaN"),
+                                        confusion_matrix_json="",
+                                        classification_report_json="",
                                         train_time_sec=float("NaN"),
                                         time_per_sample_sec=float("NaN"),
                                         cpu_avg=float("NaN"),
