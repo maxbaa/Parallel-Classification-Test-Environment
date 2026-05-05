@@ -29,6 +29,42 @@ python -m pcte_cli --config configs/covtype.yaml
 
 Beim groessten Datensatz `covtype_csv` werden die SVM-Varianten bewusst nur mit linearem Kernel konfiguriert.
 
+## Mehrere Python-Umgebungen
+
+Wenn Docker im aktuellen Host-/Runpod-Setup nicht verfuegbar ist, kannst du das Projekt direkt im bestehenden Container mit drei getrennten Python-Umgebungen ausfuehren:
+
+- `core`: CPU-Verfahren sowie PyTorch-/GPipe-/FSDP-Verfahren
+- `rapids`: cuML- und Multi-GPU-cuML-Verfahren
+- `thunder`: ThunderSVC isoliert in einer eigenen Umgebung
+
+Die Datensatz-Configs (`configs/breast_cancer.yaml`, `configs/adult.yaml`, `configs/covtype.yaml`) bleiben dabei unveraendert. Ein kleiner Helfer filtert beim Start automatisch nur die Algorithmen, die zur jeweiligen Runtime gehoeren.
+
+Umgebungen anlegen:
+
+```bash
+bash scripts/setup_runtime_venvs.sh
+```
+
+Nur eine Runtime fuer einen Datensatz starten:
+
+```bash
+bash scripts/run_runtime_env.sh core configs/adult.yaml
+bash scripts/run_runtime_env.sh rapids configs/adult.yaml
+bash scripts/run_runtime_env.sh thunder configs/adult.yaml
+```
+
+Alle Runtime-Gruppen nacheinander fuer einen Datensatz starten:
+
+```bash
+bash scripts/run_all_envs.sh configs/adult.yaml
+```
+
+Hinweise:
+
+- Die Umgebungen werden unter `.venvs/` angelegt und nutzen `--system-site-packages`, damit vorhandene CUDA-/RAPIDS-Pakete im Host-Container weiterverwendet werden.
+- `thundersvm` wird in der `thunder`-Umgebung separat installiert, damit es die anderen Laufzeiten nicht beeinflusst.
+- Die Preflight-Pruefung bleibt aktiv: Wenn eine spezialisierte Runtime in ihrer Umgebung nicht korrekt verfuegbar ist, bricht genau dieser Lauf hart ab.
+
 ## Ergebnisstruktur
 
 Jeder Lauf landet unter `results/<timestamp>_<run_name>/`:
