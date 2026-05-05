@@ -29,6 +29,49 @@ python -m pcte_cli --config configs/covtype.yaml
 
 Beim groessten Datensatz `covtype_csv` werden die SVM-Varianten bewusst nur mit linearem Kernel konfiguriert.
 
+## Container-Setup
+
+Um die Umgebung handhabbar zu halten, ist das Projekt in drei Runtime-Container aufgeteilt:
+
+- `core`: CPU-Verfahren sowie PyTorch-/GPipe-/FSDP-Verfahren
+- `rapids`: cuML- und Multi-GPU-cuML-Verfahren
+- `thunder`: ThunderSVC isoliert in einem eigenen Container
+
+Die normalen Datensatz-Configs (`configs/breast_cancer.yaml`, `configs/adult.yaml`, `configs/covtype.yaml`) bleiben dabei bestehen. Ein kleiner Helfer filtert beim Start automatisch nur die Algorithmen, die zur jeweiligen Runtime gehoeren.
+
+Images bauen:
+
+```bash
+docker compose build core
+docker compose build rapids
+docker compose build thunder
+```
+
+Nur eine Runtime fuer einen Datensatz starten:
+
+```bash
+docker compose run --rm --gpus all core \
+  python scripts/run_runtime_suite.py --runtime core --config configs/adult.yaml
+
+docker compose run --rm --gpus all rapids \
+  python scripts/run_runtime_suite.py --runtime rapids --config configs/adult.yaml
+
+docker compose run --rm --gpus all thunder \
+  python scripts/run_runtime_suite.py --runtime thunder --config configs/adult.yaml
+```
+
+Alle Runtime-Gruppen nacheinander fuer einen Datensatz starten:
+
+```bash
+bash scripts/run_all_runtimes.sh configs/adult.yaml
+```
+
+Hinweise:
+
+- Der `thunder`-Container baut `thundersvm` bewusst getrennt vom Rest, weil diese Laufzeit in der gemeinsamen Umgebung am fragilsten ist.
+- Falls dein RAPIDS-Basisimage einen anderen Tag braucht, kannst du `RAPIDS_BASE_IMAGE` vor dem Build setzen.
+- Die Preflight-Pruefung bleibt aktiv: Wenn eine spezialisierte Runtime in ihrem Container nicht korrekt verfuegbar ist, bricht genau dieser Lauf hart ab.
+
 ## Ergebnisstruktur
 
 Jeder Lauf landet unter `results/<timestamp>_<run_name>/`:
