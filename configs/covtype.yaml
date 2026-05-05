@@ -2,7 +2,7 @@ run_name: covtype_benchmark
 output_dir: results
 repetitions: 1
 enable_gpu_monitoring: true
-continue_on_error: true
+continue_on_error: false
 
 algorithms:
   - name: BaselineSVC

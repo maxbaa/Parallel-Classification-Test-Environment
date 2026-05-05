@@ -11,6 +11,8 @@ pip install -e .
 python -m pcte_cli --config configs/breast_cancer.yaml
 ```
 
+GPU-/Spezialverfahren erwarten, dass `torch`, `torchgpipe`, `cuml` bzw. `thundersvm` bereits passend in der Zielumgebung installiert sind. Das Projekt faengt fehlende oder inkonsistente Spezial-Runtimes nicht durch Fallbacks ab, sondern bricht den Lauf vor dem ersten Experiment mit einer klaren Preflight-Fehlermeldung ab.
+
 Alternativ kannst du nach der Installation den Konsolenbefehl verwenden:
 
 ```bash

@@ -10,12 +10,18 @@ dependencies = [
     "pandas",
     "scikit-learn",
     "psutil",
-    "torch",
-    "torchgpipe",
-    "thundersvm",
     "pyyaml",
     "matplotlib",
     "typing-extensions",
+]
+
+[project.optional-dependencies]
+torch = [
+    "torch",
+    "torchgpipe",
+]
+thundersvm = [
+    "thundersvm",
 ]
 
 [project.scripts]

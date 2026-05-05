@@ -43,7 +43,7 @@ class _TorchMLP(nn.Module if nn is not None else object):
 
 
 class FSDPMLP(ClassifierMixin, BaseEstimator):
-    """PyTorch MLP that uses FSDP when a distributed CUDA runtime is available."""
+    """PyTorch MLP that requires true FSDP execution when configured."""
 
     def __init__(
         self,
@@ -142,16 +142,21 @@ class FSDPMLP(ClassifierMixin, BaseEstimator):
             output_dim=output_dim,
         ).to(self.device_)
 
-        if self._fsdp_ready():
+        if self.use_fsdp:
+            if not self._fsdp_ready():
+                raise RuntimeError(
+                    "FSDPMLP is configured to use FSDP, but the distributed CUDA/FSDP runtime is not ready."
+                )
             self.model_ = FSDP(
                 model,
                 device_id=torch.cuda.current_device(),
                 sync_module_states=self.sync_module_states,
             )
             self.execution_mode_ = "fsdp"
-        else:
-            self.model_ = model
-            self.execution_mode_ = "local"
+            return
+
+        self.model_ = model
+        self.execution_mode_ = "local"
 
     def _build_optimizer(self):
         if self.solver == "adam":

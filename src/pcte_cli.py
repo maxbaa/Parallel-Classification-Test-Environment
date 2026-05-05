@@ -18,6 +18,7 @@ from evaluation.persistence import (
     save_config_copy,
     save_results_bundle,
 )
+from evaluation.preflight import validate_experiment_environment
 from evaluation.reporting import build_summary, generate_report_plots, write_summary_markdown
 from evaluation.reporting import build_failure_summary, write_summary_tables
 from evaluation.runner import ExperimentRunner
@@ -66,6 +67,10 @@ def main() -> None:
     args = parse_args()
     raw_config = load_yaml_config(args.config)
     experiment = build_experiment_definition(raw_config)
+    validate_experiment_environment(
+        algorithms=experiment.algorithms,
+        scenarios=experiment.scenarios,
+    )
 
     run_dir = create_run_directory(
         run_name=experiment.run_name,
