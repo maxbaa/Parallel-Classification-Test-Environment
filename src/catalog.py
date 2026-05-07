@@ -350,6 +350,30 @@ DATASET_REGISTRY: dict[str, dict[str, Any]] = {
 }
 
 
+def _normalize_split_label(value: Any) -> str:
+    text = str(value).strip().replace(" ", "_")
+    return text or "split"
+
+
+def _build_dataset_config(
+    *,
+    dataset_name: str,
+    source_name: str,
+    split_label: str,
+    loader_name: str,
+    registry_entry: dict[str, Any],
+    parameters: dict[str, Any],
+) -> DatasetConfig:
+    return DatasetConfig(
+        name=dataset_name,
+        loader_name=loader_name,
+        load_data=registry_entry["loader"],
+        base_params=parameters,
+        source_name=source_name,
+        split_label=split_label,
+    )
+
+
 def _require_registry_entry(name: str, registry: dict[str, dict[str, Any]], kind: str) -> dict[str, Any]:
     if name not in registry:
         available = ", ".join(sorted(registry))
@@ -402,18 +426,60 @@ def build_dataset_configs(entries: list[dict[str, Any]]) -> list[DatasetConfig]:
 
     configs: list[DatasetConfig] = []
     for entry in entries:
-        loader_name = entry.get("loader", entry["name"])
+        source_name = entry["name"]
+        loader_name = entry.get("loader", source_name)
         registry_entry = _require_registry_entry(loader_name, DATASET_REGISTRY, "dataset loader")
-        parameters = {
+        base_parameters = {
             **registry_entry["default_parameters"],
             **entry.get("parameters", {}),
         }
+        train_sizes = entry.get("train_sizes", [])
+        train_fractions = entry.get("train_fractions", [])
+
+        if train_sizes and train_fractions:
+            raise ValueError(
+                f"Dataset '{source_name}' cannot define both 'train_sizes' and 'train_fractions'."
+            )
+
+        if train_sizes:
+            for train_size in train_sizes:
+                train_size_int = int(train_size)
+                configs.append(
+                    _build_dataset_config(
+                        dataset_name=f"{source_name}__train_size_{train_size_int}",
+                        source_name=source_name,
+                        split_label=f"n={train_size_int}",
+                        loader_name=loader_name,
+                        registry_entry=registry_entry,
+                        parameters={**base_parameters, "train_size": train_size_int},
+                    )
+                )
+            continue
+
+        if train_fractions:
+            for train_fraction in train_fractions:
+                train_fraction_float = float(train_fraction)
+                percentage = train_fraction_float * 100
+                configs.append(
+                    _build_dataset_config(
+                        dataset_name=f"{source_name}__train_fraction_{_normalize_split_label(percentage)}",
+                        source_name=source_name,
+                        split_label=f"n={percentage:g}%",
+                        loader_name=loader_name,
+                        registry_entry=registry_entry,
+                        parameters={**base_parameters, "train_fraction": train_fraction_float},
+                    )
+                )
+            continue
+
         configs.append(
-            DatasetConfig(
-                name=entry["name"],
+            _build_dataset_config(
+                dataset_name=source_name,
+                source_name=source_name,
+                split_label="",
                 loader_name=loader_name,
-                load_data=registry_entry["loader"],
-                base_params=parameters,
+                registry_entry=registry_entry,
+                parameters=base_parameters,
             )
         )
     return configs

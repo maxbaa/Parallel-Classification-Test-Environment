@@ -26,16 +26,32 @@ SUMMARY_COLUMNS = [
 ]
 
 
+def _context_label(row: pd.Series) -> str:
+    dataset_group = str(row.get("dataset_group", row.get("dataset", "")))
+    split_label = str(row.get("split_label", "") or "").strip()
+    scenario = str(row.get("scenario", ""))
+    dataset_label = dataset_group if not split_label else f"{dataset_group} ({split_label})"
+    return dataset_label if not scenario else f"{dataset_label} | {scenario}"
+
+
+def _slugify(value: str) -> str:
+    sanitized = "".join(char.lower() if char.isalnum() else "_" for char in value.strip())
+    compact = "_".join(part for part in sanitized.split("_") if part)
+    return compact or "plot"
+
+
 def build_summary(results_df: pd.DataFrame) -> pd.DataFrame:
     if results_df.empty:
         return pd.DataFrame()
 
     grouped = (
         results_df.assign(success_flag=results_df["status"].eq("success").astype(int))
-        .groupby(["dataset", "scenario", "algorithm"], dropna=False)
+        .groupby(["dataset", "dataset_group", "split_label", "scenario", "algorithm"], dropna=False)
         .agg(
             runs_total=("run_index", "count"),
             runs_success=("success_flag", "sum"),
+            n_train_samples_mean=("n_train_samples", "mean"),
+            n_test_samples_mean=("n_test_samples", "mean"),
             accuracy_mean=("accuracy", "mean"),
             accuracy_std=("accuracy", "std"),
             balanced_accuracy_mean=("balanced_accuracy", "mean"),
@@ -54,7 +70,9 @@ def build_summary(results_df: pd.DataFrame) -> pd.DataFrame:
         .reset_index()
     )
     grouped["success_rate"] = grouped["runs_success"] / grouped["runs_total"]
-    return grouped.sort_values(["dataset", "scenario", "algorithm"]).reset_index(drop=True)
+    return grouped.sort_values(
+        ["dataset_group", "n_train_samples_mean", "scenario", "algorithm"]
+    ).reset_index(drop=True)
 
 
 def build_failure_summary(results_df: pd.DataFrame) -> pd.DataFrame:
@@ -85,7 +103,7 @@ def _plot_metric(summary_df: pd.DataFrame, metric: str, ylabel: str, output_path
         return None
 
     plot_df = summary_df.copy()
-    plot_df["context"] = plot_df["dataset"] + " | " + plot_df["scenario"]
+    plot_df["context"] = plot_df.apply(_context_label, axis=1)
     pivot_df = plot_df.pivot(index="algorithm", columns="context", values=metric)
     if pivot_df.empty:
         return None
@@ -107,7 +125,7 @@ def _plot_heatmap(summary_df: pd.DataFrame, metric: str, title: str, output_path
         return None
 
     plot_df = summary_df.copy()
-    plot_df["context"] = plot_df["dataset"] + " | " + plot_df["scenario"]
+    plot_df["context"] = plot_df.apply(_context_label, axis=1)
     pivot_df = plot_df.pivot(index="algorithm", columns="context", values=metric)
     if pivot_df.empty:
         return None
@@ -193,7 +211,9 @@ def _plot_resource_profiles(summary_df: pd.DataFrame, output_path: Path) -> Path
 
     plot_df = summary_df.copy()
     plot_df["label"] = plot_df["algorithm"] + "\n" + plot_df["scenario"]
-    plot_df = plot_df.sort_values(["dataset", "scenario", "algorithm"]).reset_index(drop=True)
+    if "split_label" in plot_df.columns:
+        plot_df["label"] = plot_df["label"] + "\n" + plot_df["split_label"].fillna("")
+    plot_df = plot_df.sort_values(["dataset_group", "n_train_samples_mean", "scenario", "algorithm"]).reset_index(drop=True)
     if plot_df.empty:
         return None
 
@@ -221,7 +241,7 @@ def _plot_overview(summary_df: pd.DataFrame, output_path: Path) -> Path | None:
         return None
 
     plot_df = summary_df.copy()
-    plot_df["context"] = plot_df["dataset"] + " | " + plot_df["scenario"]
+    plot_df["context"] = plot_df.apply(_context_label, axis=1)
     metrics = [
         ("accuracy_mean", "Accuracy"),
         ("f1_mean", "F1"),
@@ -250,6 +270,68 @@ def _plot_overview(summary_df: pd.DataFrame, output_path: Path) -> Path | None:
     return output_path
 
 
+def _plot_train_scaling(results_df: pd.DataFrame, output_dir: Path) -> list[Path]:
+    required_columns = {"algorithm", "scenario", "n_train_samples", "train_time_sec", "status"}
+    if results_df.empty or not required_columns.issubset(results_df.columns):
+        return []
+
+    dataset_column = "dataset_group" if "dataset_group" in results_df.columns else "dataset"
+    plot_df = results_df.loc[
+        results_df["status"].eq("success") & results_df["n_train_samples"].gt(0)
+    ].copy()
+    if plot_df.empty:
+        return []
+
+    grouped = (
+        plot_df.groupby([dataset_column, "scenario", "algorithm", "n_train_samples"], dropna=False)
+        .agg(
+            train_time_sec_mean=("train_time_sec", "mean"),
+            train_time_sec_std=("train_time_sec", "std"),
+            runs=("run_index", "count"),
+        )
+        .reset_index()
+        .sort_values([dataset_column, "scenario", "algorithm", "n_train_samples"])
+    )
+
+    output_paths: list[Path] = []
+    for dataset_name, dataset_df in grouped.groupby(dataset_column, dropna=False):
+        if dataset_df["n_train_samples"].nunique() < 2:
+            continue
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        multi_scenario = dataset_df["scenario"].nunique() > 1
+        for (scenario, algorithm), series_df in dataset_df.groupby(["scenario", "algorithm"], dropna=False):
+            label = str(algorithm) if not multi_scenario else f"{algorithm} | {scenario}"
+            ordered = series_df.sort_values("n_train_samples")
+            ax.plot(
+                ordered["n_train_samples"],
+                ordered["train_time_sec_mean"],
+                marker="o",
+                linewidth=2,
+                label=label,
+            )
+
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+        ax.set_xlabel("Size of Training Set")
+        ax.set_ylabel("Train Time Mean (s)")
+        ax.set_title(f"Training Set Scaling: {dataset_name}")
+        ax.grid(True, which="both", axis="both", alpha=0.25)
+        ax.legend(
+            title="Algorithm" if not multi_scenario else "Algorithm | Scenario",
+            bbox_to_anchor=(1.02, 1),
+            loc="upper left",
+        )
+        plt.tight_layout()
+
+        output_path = output_dir / f"train_scaling_{_slugify(str(dataset_name))}.png"
+        plt.savefig(output_path, dpi=180)
+        plt.close(fig)
+        output_paths.append(output_path)
+
+    return output_paths
+
+
 def generate_report_plots(results_df: pd.DataFrame, summary_df: pd.DataFrame, output_dir: Path) -> list[Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -264,6 +346,7 @@ def generate_report_plots(results_df: pd.DataFrame, summary_df: pd.DataFrame, ou
         _plot_tradeoff(summary_df, output_dir / "accuracy_vs_train_time.png"),
         _plot_resource_profiles(summary_df, output_dir / "resource_profiles.png"),
     ]
+    plot_paths.extend(_plot_train_scaling(results_df, output_dir))
 
     if "gpu_max_gb_mean" in summary_df.columns and not summary_df["gpu_max_gb_mean"].fillna(0).eq(0).all():
         plot_paths.append(
@@ -282,7 +365,7 @@ def _write_metric_matrix(summary_df: pd.DataFrame, metric: str, output_path: Pat
         return None
 
     matrix_df = summary_df.copy()
-    matrix_df["context"] = matrix_df["dataset"] + " | " + matrix_df["scenario"]
+    matrix_df["context"] = matrix_df.apply(_context_label, axis=1)
     pivot_df = matrix_df.pivot(index="algorithm", columns="context", values=metric)
     if pivot_df.empty:
         return None
@@ -388,6 +471,7 @@ def write_summary_markdown(summary_df: pd.DataFrame, failures_df: pd.DataFrame, 
                 "- `leaderboard.csv` contains the full sortable ranking with numeric metrics.",
                 "- `matrix_accuracy.csv`, `matrix_balanced_accuracy.csv`, `matrix_f1.csv` and `matrix_success_rate.csv` contain comparison matrices by algorithm and dataset/scenario.",
                 "- `matrix_train_time.csv`, `matrix_ram_peak.csv` and `matrix_gpu_memory.csv` contain numeric runtime/resource matrices.",
+                "- `plots/train_scaling_*.png` shows how train time grows with training set size for every dataset that was configured with multiple train sizes.",
                 "",
                 "Missing bars in plots usually mean there was no successful run for that algorithm/scenario combination, so the chart had no numeric value to aggregate.",
             ]

@@ -27,6 +27,14 @@ python -m pcte_cli --config configs/adult.yaml
 python -m pcte_cli --config configs/covtype.yaml
 ```
 
+Verfuegbare Skalierungs-Configs fuer Laufzeit-vs.-Trainingsgroesse:
+
+```bash
+python -m pcte_cli --config configs/breast_cancer_scaling.yaml
+python -m pcte_cli --config configs/adult_scaling.yaml
+python -m pcte_cli --config configs/covtype_scaling.yaml
+```
+
 Beim groessten Datensatz `covtype_csv` werden die SVM-Varianten bewusst nur mit linearem Kernel konfiguriert.
 
 ## Mehrere Python-Umgebungen
@@ -101,6 +109,8 @@ Typisches Muster fuer einen wissenschaftlich saubereren Vergleich:
 Zusaetzlich koennen Algorithmen ueber `allowed_datasets` auf sinnvolle Datensaetze begrenzt werden, damit z.B. SVM-Varianten nicht auf unpassenden Big-Data-Lasten laufen.
 
 Fuer CSV-Datensaetze kannst du den Loader `csv_classification` verwenden und `path` plus `target_column` setzen.
+
+Fuer Skalierungsplots kannst du in einem Datensatzblock `train_sizes` oder `train_fractions` definieren. Der Loader behaelt dann einen festen Holdout-Testsplit und erzeugt deterministische, stratified Teilmengen des Trainingssplits, damit Laufzeiten ueber verschiedene Trainingsgroessen vergleichbar bleiben.
 
 Vorkonfigurierte CSV-Presets:
 

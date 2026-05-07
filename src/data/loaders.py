@@ -30,21 +30,6 @@ def _resolve_dataset_path(path_value: str) -> Path:
     return path
 
 
-def load_breast_cancer_dataset(params):
-    data = load_breast_cancer()
-    X = data.data
-    y = data.target
-
-    return train_test_split(
-        X,
-        y,
-        test_size=params.get("test_size", 0.2),
-        random_state=params.get("random_state", 42),
-        shuffle=True,
-        stratify=y,
-    )
-
-
 def _resolve_header_value(header_value: Any):
     if isinstance(header_value, str) and header_value.lower() == "none":
         return None
@@ -82,6 +67,135 @@ def _encode_target(y: pd.Series) -> np.ndarray:
     return pd.Categorical(y.astype("string").fillna("__missing__")).codes
 
 
+def _resolve_requested_train_size(params: dict[str, Any], available_samples: int) -> int | None:
+    train_size = params.get("train_size")
+    train_fraction = params.get("train_fraction")
+
+    if train_size is not None and train_fraction is not None:
+        raise ValueError("Please configure either 'train_size' or 'train_fraction', not both.")
+
+    if train_size is not None:
+        requested = int(train_size)
+    elif train_fraction is not None:
+        fraction = float(train_fraction)
+        if not 0 < fraction <= 1:
+            raise ValueError(f"'train_fraction' must be in the range (0, 1], got {fraction}.")
+        requested = int(round(available_samples * fraction))
+    else:
+        return None
+
+    if requested <= 0:
+        raise ValueError(f"Requested train subset size must be positive, got {requested}.")
+    if requested > available_samples:
+        raise ValueError(
+            f"Requested train subset size {requested} exceeds available training samples {available_samples}."
+        )
+
+    return requested
+
+
+def _nested_stratified_subset_indices(y: np.ndarray, subset_size: int, random_state: int) -> np.ndarray:
+    if subset_size >= len(y):
+        return np.arange(len(y))
+
+    classes, y_inverse = np.unique(y, return_inverse=True)
+    if subset_size < len(classes):
+        raise ValueError(
+            f"Requested train subset size {subset_size} is too small for {len(classes)} classes."
+        )
+
+    rng = np.random.default_rng(random_state)
+    class_indices = [np.flatnonzero(y_inverse == class_index) for class_index in range(len(classes))]
+    class_counts = np.array([len(indices) for indices in class_indices], dtype=int)
+    fractional_targets = class_counts * (subset_size / len(y))
+    base_counts = np.floor(fractional_targets).astype(int)
+    base_counts = np.minimum(base_counts, class_counts)
+    base_counts = np.where(base_counts == 0, 1, base_counts)
+
+    assigned = int(base_counts.sum())
+    remainders = fractional_targets - np.floor(fractional_targets)
+    order = np.argsort(-remainders)
+
+    while assigned < subset_size:
+        updated = False
+        for class_index in order:
+            if base_counts[class_index] < class_counts[class_index]:
+                base_counts[class_index] += 1
+                assigned += 1
+                updated = True
+                if assigned == subset_size:
+                    break
+        if not updated:
+            break
+
+    while assigned > subset_size:
+        updated = False
+        for class_index in reversed(order):
+            if base_counts[class_index] > 1:
+                base_counts[class_index] -= 1
+                assigned -= 1
+                updated = True
+                if assigned == subset_size:
+                    break
+        if not updated:
+            raise ValueError(
+                "Unable to reduce stratified subset counts without dropping an entire class."
+            )
+
+    selected_indices: list[np.ndarray] = []
+    for class_index, indices in enumerate(class_indices):
+        shuffled_indices = rng.permutation(indices)
+        selected_indices.append(shuffled_indices[: base_counts[class_index]])
+
+    combined = np.concatenate(selected_indices)
+    return np.sort(combined)
+
+
+def _apply_train_subset(X_train: np.ndarray, y_train: np.ndarray, params: dict[str, Any]):
+    requested_train_size = _resolve_requested_train_size(params, len(y_train))
+    if requested_train_size is None or requested_train_size == len(y_train):
+        return X_train, y_train
+
+    subset_random_state = int(params.get("train_subset_random_state", params.get("random_state", 42)))
+    subset_strategy = str(params.get("train_subset_strategy", "stratified_nested"))
+
+    if subset_strategy == "stratified_nested":
+        subset_indices = _nested_stratified_subset_indices(y_train, requested_train_size, subset_random_state)
+    elif subset_strategy == "stratified_shuffle":
+        subset_indices, _ = train_test_split(
+            np.arange(len(y_train)),
+            train_size=requested_train_size,
+            random_state=subset_random_state,
+            shuffle=True,
+            stratify=y_train,
+        )
+        subset_indices = np.sort(subset_indices)
+    else:
+        raise ValueError(
+            f"Unknown train subset strategy '{subset_strategy}'. "
+            "Supported values: 'stratified_nested', 'stratified_shuffle'."
+        )
+
+    return X_train[subset_indices], y_train[subset_indices]
+
+
+def load_breast_cancer_dataset(params):
+    data = load_breast_cancer()
+    X = data.data
+    y = data.target
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=params.get("test_size", 0.2),
+        random_state=params.get("random_state", 42),
+        shuffle=True,
+        stratify=y,
+    )
+    X_train, y_train = _apply_train_subset(X_train, y_train, params)
+    return X_train, X_test, y_train, y_test
+
+
 def load_csv_classification_dataset(params):
     path = _resolve_dataset_path(str(params.get("path", "")))
     target_column = params.get("target_column", "target")
@@ -117,7 +231,7 @@ def load_csv_classification_dataset(params):
     y = _encode_target(df[target_column_name])
     X = feature_df.to_numpy(dtype=np.float32, copy=False)
 
-    return train_test_split(
+    X_train, X_test, y_train, y_test = train_test_split(
         X,
         y,
         test_size=test_size,
@@ -125,6 +239,8 @@ def load_csv_classification_dataset(params):
         shuffle=True,
         stratify=y if stratify else None,
     )
+    X_train, y_train = _apply_train_subset(X_train, y_train, params)
+    return X_train, X_test, y_train, y_test
 
 
 def load_fraud_dataset(params):

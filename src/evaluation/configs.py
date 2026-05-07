@@ -43,6 +43,8 @@ class DatasetConfig:
     loader_name: str
     load_data: Callable[[Dict[str, Any]], Tuple[ArrayLike, ArrayLike, ArrayLike, ArrayLike]]
     base_params: Dict[str, Any]
+    source_name: str = ""
+    split_label: str = ""
 
 @dataclass
 class ScenarioConfig:

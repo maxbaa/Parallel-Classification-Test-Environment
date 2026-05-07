@@ -24,6 +24,8 @@ class SingleRunResult:
     """Holds the result of a single experiment run."""
     algorithm: str
     dataset: str
+    dataset_group: str
+    split_label: str
     dataset_loader: str
     scenario: str
     run_index: int
@@ -153,6 +155,8 @@ class ExperimentRunner:
                             run_result = SingleRunResult(
                                 algorithm=algo_cfg.name,
                                 dataset=dataset_cfg.name,
+                                dataset_group=dataset_cfg.source_name or dataset_cfg.name,
+                                split_label=dataset_cfg.split_label,
                                 dataset_loader=dataset_cfg.loader_name,
                                 scenario=scen_cfg.name,
                                 run_index=run_number,
@@ -201,6 +205,8 @@ class ExperimentRunner:
                                     SingleRunResult(
                                         algorithm=algo_cfg.name,
                                         dataset=dataset_cfg.name,
+                                        dataset_group=dataset_cfg.source_name or dataset_cfg.name,
+                                        split_label=dataset_cfg.split_label,
                                         dataset_loader=dataset_cfg.loader_name,
                                         scenario=scen_cfg.name,
                                         run_index=run_number,
