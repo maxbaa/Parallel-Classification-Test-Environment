@@ -64,7 +64,7 @@ algorithms:
 datasets:
   - name: breast_cancer_csv
     loader: breast_cancer_csv
-    train_sizes: [64, 128, 256, 384]
+    train_fractions: [0.05, 0.10, 0.15, 0.20, 0.30, 0.40, 0.50, 0.65, 0.80, 1.0]
 
 scenarios:
   - name: cpu_sequential
