@@ -7,44 +7,26 @@ continue_on_error: false
 algorithms:
   - name: BaselineSVC
     allowed_scenarios: [cpu_sequential]
-    parameters:
-      kernel: linear
     search:
       enabled: false
   - name: CascadeSVC
     allowed_scenarios: [cpu_sequential]
-    parameters:
-      kernel: linear
-      fold_size: 50000
     search:
       enabled: false
   - name: ThunderSVC
     allowed_scenarios: [gpu_single]
-    parameters:
-      kernel: linear
     search:
       enabled: false
   - name: BaselineMLP
     allowed_scenarios: [gpu_single]
-    parameters:
-      batch_size: 4096
-      max_iter: 50
     search:
       enabled: false
   - name: GPipeMLP
     allowed_scenarios: [gpu_multi_2x]
-    parameters:
-      batch_size: 4096
-      max_iter: 50
-      chunks: 8
     search:
       enabled: false
   - name: FSDPMLP
     allowed_scenarios: [gpu_multi_2x]
-    parameters:
-      batch_size: 4096
-      max_iter: 50
-      use_fsdp: true
     search:
       enabled: false
   - name: BaselineRF
