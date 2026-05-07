@@ -7,17 +7,24 @@ from typing import Union
 from typing_extensions import Self
 
 class CascadeSVC(ClassifierMixin, BaseEstimator):
-
-    """An implementation of the Cascade SVM algorithm, using the same conventions as the scikit-learn package,
-    and can be used as any scikit-learn classification algorithm (same functions fit, predict, can be used in GridSearchCV...)"""
-
-    def __init__(self, fold_size: int = 10000, verbose: bool = True, C: float = 1.0,
-                 kernel: str = "rbf", degree: int = 3, gamma: Union[str, float] = "scale",
-                 coef0: float = 0.0, probability: bool = False, random_state: Union[int, None] = None) -> None:
-        """Initialization:
-        - fold_size: the size of folds in which the dataset will be splitted, one SVC estimator being fitted on each fold
-        - verbose: if True, prints information during training
-        - other parameters: parameters which can be passed to the SVC class"""
+    def __init__(
+        self,
+        fold_size: int = 10000,
+        verbose: bool = False,
+        C: float = 1.0,
+        kernel: str = "rbf",
+        degree: int = 3,
+        gamma: Union[str, float] = "scale",
+        coef0: float = 0.0,
+        shrinking: bool = True,
+        probability: bool = False,
+        tol: float = 1e-3,
+        cache_size: int = 1024,
+        class_weight=None,
+        max_iter: int = 10000,
+        decision_function_shape: str = "ovr",
+        random_state: int = 42,
+    ) -> None:
         self.fold_size = fold_size
         self.verbose = verbose
         self.C = C
@@ -25,7 +32,13 @@ class CascadeSVC(ClassifierMixin, BaseEstimator):
         self.degree = degree
         self.gamma = gamma
         self.coef0 = coef0
+        self.shrinking = shrinking
         self.probability = probability
+        self.tol = tol
+        self.cache_size = cache_size
+        self.class_weight = class_weight
+        self.max_iter = max_iter
+        self.decision_function_shape = decision_function_shape
         self.random_state = random_state
 
     def _fit_base_svc(self, X: np.ndarray, y: np.ndarray) -> SVC:
@@ -101,4 +114,8 @@ class CascadeSVC(ClassifierMixin, BaseEstimator):
         return self.classes_[self.final_svc_.predict(X)]
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        if not self.probability:
+            raise NotImplementedError(
+                "predict_proba is unavailable because probability=False."
+            )
         return self.final_svc_.predict_proba(X)

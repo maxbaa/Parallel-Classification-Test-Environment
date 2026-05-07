@@ -11,8 +11,6 @@ except ImportError as exc:
 
 
 class ThunderSVC(ClassifierMixin, BaseEstimator):
-    """Thin wrapper around ThunderSVM's SVC for accelerated baseline comparisons."""
-
     def __init__(
         self,
         C=1.0,
@@ -21,12 +19,12 @@ class ThunderSVC(ClassifierMixin, BaseEstimator):
         gamma="scale",
         coef0=0.0,
         shrinking=True,
-        probability=True,
+        probability=False,
         tol=1e-3,
-        cache_size=200,
+        cache_size=1024,
         class_weight=None,
         verbose=False,
-        max_iter=-1,
+        max_iter=10000,
         decision_function_shape="ovr",
         random_state=42,
     ):
@@ -81,11 +79,12 @@ class ThunderSVC(ClassifierMixin, BaseEstimator):
         return ThunderSVMClassifier(**thunder_kwargs)
 
     def fit(self, X, y):
-        X = np.asarray(X)
+        X = np.asarray(X, dtype=np.float32)
         y = np.asarray(y)
 
         if self.gamma == "scale":
-            self._resolved_gamma = 1.0 / (X.shape[1] * X.var())
+            var = X.var()
+            self._resolved_gamma = 1.0 / (X.shape[1] * var) if var > 0 else 1.0
         elif self.gamma == "auto":
             self._resolved_gamma = 1.0 / X.shape[1]
         else:
@@ -101,6 +100,10 @@ class ThunderSVC(ClassifierMixin, BaseEstimator):
         return self.model_.predict(X)
 
     def predict_proba(self, X):
+        if not self.probability:
+            raise NotImplementedError(
+                "predict_proba is unavailable because probability=False."
+            )
         return self.model_.predict_proba(X)
 
     def decision_function(self, X):

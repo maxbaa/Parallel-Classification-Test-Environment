@@ -7,14 +7,21 @@ continue_on_error: false
 algorithms:
   - name: BaselineSVC
     allowed_scenarios: [cpu_sequential]
+    parameters:
+      kernel: linear
     search:
       enabled: false
   - name: CascadeSVC
     allowed_scenarios: [cpu_sequential]
+    parameters:
+      kernel: linear
+      fold_size: 50000
     search:
       enabled: false
   - name: ThunderSVC
     allowed_scenarios: [gpu_single]
+    parameters:
+      kernel: linear
     search:
       enabled: false
   - name: BaselineMLP

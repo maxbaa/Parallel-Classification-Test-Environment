@@ -4,8 +4,6 @@ from sklearn.svm import SVC
 
 
 class BaselineSVC(ClassifierMixin, BaseEstimator):
-    """Thin wrapper around sklearn's SVC for baseline comparisons."""
-
     def __init__(
         self,
         C=1.0,
@@ -14,15 +12,15 @@ class BaselineSVC(ClassifierMixin, BaseEstimator):
         gamma="scale",
         coef0=0.0,
         shrinking=True,
-        probability=True,
+        probability=False,
         tol=1e-3,
-        cache_size=200,
+        cache_size=1024,
         class_weight=None,
         verbose=False,
-        max_iter=-1,
+        max_iter=10000,
         decision_function_shape="ovr",
-        break_ties=False,
         random_state=42,
+        break_ties=False,
     ):
         self.C = C
         self.kernel = kernel
@@ -68,7 +66,11 @@ class BaselineSVC(ClassifierMixin, BaseEstimator):
     def predict(self, X):
         return self.model_.predict(X)
 
-    def predict_proba(self, X):
+    def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        if not self.probability:
+            raise NotImplementedError(
+                "predict_proba is unavailable because probability=False."
+            )
         return self.model_.predict_proba(X)
 
     def decision_function(self, X):
