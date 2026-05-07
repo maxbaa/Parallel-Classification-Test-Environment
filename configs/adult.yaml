@@ -38,11 +38,6 @@ algorithms:
     allowed_scenarios: [cpu_sequential]
   - name: CuMLKNN
     allowed_scenarios: [gpu_single]
-  - name: CuMLMultiGPUKNN
-    allowed_scenarios: [gpu_multi_2x]
-    parameters:
-      n_workers: 2
-      chunk_size: 250000
 
 datasets:
   - name: adult_csv

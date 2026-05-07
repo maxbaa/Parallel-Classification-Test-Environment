@@ -58,7 +58,7 @@ class ThunderSVC(ClassifierMixin, BaseEstimator):
             "C": self.C,
             "kernel": self.kernel,
             "degree": self.degree,
-            "gamma": self.gamma,
+            "gamma": self._resolved_gamma,
             "coef0": self.coef0,
             "shrinking": self.shrinking,
             "probability": self.probability,
@@ -83,6 +83,14 @@ class ThunderSVC(ClassifierMixin, BaseEstimator):
     def fit(self, X, y):
         X = np.asarray(X)
         y = np.asarray(y)
+
+        if self.gamma == "scale":
+            self._resolved_gamma = 1.0 / (X.shape[1] * X.var())
+        elif self.gamma == "auto":
+            self._resolved_gamma = 1.0 / X.shape[1]
+        else:
+            self._resolved_gamma = self.gamma
+
         self.model_ = self._build_model()
         self.model_.fit(X, y)
         self.classes_ = np.unique(y)

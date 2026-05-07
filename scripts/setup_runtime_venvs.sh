@@ -22,7 +22,7 @@ create_venv rapids
 create_venv thunder
 
 "$VENV_ROOT/core/bin/python" -m pip install torchgpipe
-"$VENV_ROOT/thunder/bin/python" -m pip install --force-reinstall --no-deps git+https://github.com/Xtra-Computing/thundersvm.git
+"$VENV_ROOT/thunder/bin/python" -m pip install -e "$ROOT_DIR"
 
 cat <<EOF
 Runtime environments created in:
