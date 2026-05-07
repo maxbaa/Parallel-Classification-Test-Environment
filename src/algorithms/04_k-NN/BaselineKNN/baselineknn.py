@@ -10,10 +10,9 @@ class BaselineKNN(ClassifierMixin, BaseEstimator):
         self,
         n_neighbors=5,
         weights="uniform",
-        algorithm="auto",
+        algorithm="brute",
         leaf_size=30,
-        p=2,
-        metric="minkowski",
+        metric="euclidean",
         metric_params=None,
         n_jobs=1,
     ):
@@ -21,7 +20,6 @@ class BaselineKNN(ClassifierMixin, BaseEstimator):
         self.weights = weights
         self.algorithm = algorithm
         self.leaf_size = leaf_size
-        self.p = p
         self.metric = metric
         self.metric_params = metric_params
         self.n_jobs = n_jobs
@@ -34,7 +32,6 @@ class BaselineKNN(ClassifierMixin, BaseEstimator):
             weights=self.weights,
             algorithm=self.algorithm,
             leaf_size=self.leaf_size,
-            p=self.p,
             metric=self.metric,
             metric_params=self.metric_params,
             n_jobs=self.n_jobs,
@@ -47,8 +44,11 @@ class BaselineKNN(ClassifierMixin, BaseEstimator):
     def predict(self, X):
         return self.model_.predict(X)
 
-    def predict_proba(self, X):
-        return self.model_.predict_proba(X)
+    def decision_function(self, X):
+        proba = self.predict_proba(X)
+        if proba.ndim == 2 and proba.shape[1] == 2:
+            return proba[:, 1]
+        return proba
 
     def decision_function(self, X):
         return self.model_.predict_proba(X)[:, 1]
