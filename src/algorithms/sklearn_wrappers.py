@@ -31,7 +31,18 @@ def _load_cuml_knn():
         / "cumlknn.py"
     )
     module = _load_module("cuml_knn_module", module_path)
-    return module.CuMLKNN, module.CuMLMultiGPUKNN, module.CuMLRF
+    return module.CuMLKNN, module.CuMLMultiGPUKNN
+
+
+def _load_cuml_rf():
+    module_path = (
+        Path(__file__).resolve().parent
+        / "03_RF"
+        / "CuMLRF"
+        / "cumlrf.py"
+    )
+    module = _load_module("cuml_rf_module", module_path)
+    return module.CuMLRF
 
 
 def _load_baseline_mlp():
@@ -142,7 +153,7 @@ def create_knn(params):
 
 
 def create_cuml_knn(params):
-    cuml_knn, _, _ = _load_cuml_knn()
+    cuml_knn, _ = _load_cuml_knn()
     return cuml_knn(
         n_neighbors=params.get("n_neighbors", 5),
         weights=params.get("weights", "uniform"),
@@ -151,7 +162,7 @@ def create_cuml_knn(params):
 
 
 def create_cuml_multi_gpu_knn(params):
-    _, cuml_multi_gpu_knn, _ = _load_cuml_knn()
+    _, cuml_multi_gpu_knn = _load_cuml_knn()
     return cuml_multi_gpu_knn(
         n_neighbors=params.get("n_neighbors", 5),
         weights=params.get("weights", "uniform"),
@@ -162,7 +173,7 @@ def create_cuml_multi_gpu_knn(params):
 
 
 def create_cuml_rf(params):
-    _, _, cuml_rf = _load_cuml_knn()
+    cuml_rf = _load_cuml_rf()
     return cuml_rf(
         n_estimators=params.get("n_estimators", 100),
         max_depth=params.get("max_depth", 16),
