@@ -132,7 +132,7 @@ Fuer Skalierungsplots kannst du in einem Datensatzblock `train_sizes` oder `trai
 
 Die aktuellen Scaling-Configs nutzen prozentuale Stufen:
 
-`[0.05, 0.10, 0.15, 0.20, 0.30, 0.40, 0.50, 0.65, 0.80, 1.0]`
+`[0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.0]`
 
 Damit entspricht `1.0` immer dem vollen verfuegbaren Trainingssplit fuer den jeweiligen Datensatz.
 
