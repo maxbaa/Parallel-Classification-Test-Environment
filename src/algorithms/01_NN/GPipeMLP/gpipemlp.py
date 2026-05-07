@@ -25,11 +25,11 @@ class GPipeMLP(ClassifierMixin, BaseEstimator):
 
     def __init__(
         self,
-        hidden_layer_sizes=(100,),
+        hidden_layer_sizes=(512, 512, 256),
         activation="relu",
         solver="adam",
         alpha=1e-4,
-        batch_size="auto",
+        batch_size=2048,
         learning_rate_init=1e-3,
         max_iter=200,
         shuffle=True,
