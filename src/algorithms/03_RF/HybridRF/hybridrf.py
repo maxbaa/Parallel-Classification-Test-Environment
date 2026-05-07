@@ -25,7 +25,7 @@ class HybridRF(ClassifierMixin, BaseEstimator):
     def __init__(
         self,
         n_estimators=100,
-        max_depth=5,
+        max_depth=16,
         n_processes=1,
         random_state=42,
     ):
@@ -38,6 +38,7 @@ class HybridRF(ClassifierMixin, BaseEstimator):
         X = np.asarray(X)
         y = np.asarray(y)
 
+        self.n_features_in_ = X.shape[1]
         self.classes_, y_encoded = np.unique(y, return_inverse=True)
         self.model_ = ParallelRandomForest(
             n_estimators=self.n_estimators,

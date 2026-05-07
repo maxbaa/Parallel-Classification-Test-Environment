@@ -20,8 +20,6 @@ def _as_numpy(value):
 
 
 class CuMLRF(ClassifierMixin, BaseEstimator):
-    """Single-GPU cuML random forest wrapper with sklearn-compatible methods."""
-
     def __init__(
         self,
         n_estimators=100,

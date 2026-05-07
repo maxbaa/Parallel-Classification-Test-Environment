@@ -142,7 +142,7 @@ class RandomForest:
             parent_entropy = compute_entropy(y)
 
             # try splitting for each feature
-            variable_importances = np.zeros((num_features, 2), dtype=int)
+            variable_importances = np.zeros((num_features, 2), dtype=float)
             for i in range(num_features):
                 vi = compute_variable_importance(X[:, i], y, parent_entropy)
                 variable_importances[i, :] = i, vi
