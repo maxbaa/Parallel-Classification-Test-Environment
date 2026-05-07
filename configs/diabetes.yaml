@@ -1,0 +1,66 @@
+run_name: diabetes_benchmark
+output_dir: results
+repetitions: 1
+enable_gpu_monitoring: true
+continue_on_error: false
+
+algorithms:
+  - name: BaselineSVC
+    allowed_scenarios: [cpu_sequential]
+  - name: CascadeSVC
+    allowed_scenarios: [cpu_sequential]
+  - name: ThunderSVC
+    allowed_scenarios: [gpu_single]
+  - name: BaselineMLP
+    allowed_scenarios: [gpu_single]
+    parameters:
+      batch_size: 4096
+      max_iter: 50
+  - name: GPipeMLP
+    allowed_scenarios: [gpu_multi_2x]
+    parameters:
+      batch_size: 4096
+      max_iter: 50
+      chunks: 8
+  - name: FSDPMLP
+    allowed_scenarios: [gpu_multi_2x]
+    parameters:
+      batch_size: 4096
+      max_iter: 50
+      use_fsdp: true
+  - name: BaselineRF
+    allowed_scenarios: [cpu_sequential]
+  - name: HybridRF
+    allowed_scenarios: [cpu_parallel]
+  - name: CuMLRF
+    allowed_scenarios: [gpu_single]
+  - name: BaselineKNN
+    allowed_scenarios: [cpu_sequential]
+  - name: CuMLKNN
+    allowed_scenarios: [gpu_single]
+
+datasets:
+  - name: diabetes_csv
+    loader: diabetes_csv
+
+scenarios:
+  - name: cpu_sequential
+    description: Sequential CPU reference run.
+    parameters:
+      device: cpu
+      n_workers: 1
+  - name: cpu_parallel
+    description: CPU-parallel run for methods with explicit multiprocessing.
+    parameters:
+      device: cpu
+      n_workers: 4
+  - name: gpu_single
+    description: Single-GPU run on the server.
+    parameters:
+      device: cuda
+      n_workers: 1
+  - name: gpu_multi_2x
+    description: Two-GPU run using both server GPUs.
+    parameters:
+      device: cuda
+      n_workers: 2

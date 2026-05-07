@@ -31,7 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=Path("configs/breast_cancer.yaml"),
+        default=Path("configs/adult.yaml"),
         help="Path to the YAML experiment configuration.",
     )
     return parser.parse_args()

@@ -1,4 +1,4 @@
-run_name: breast_cancer_benchmark
+run_name: diabetes_scaling
 output_dir: results
 repetitions: 1
 enable_gpu_monitoring: true
@@ -7,41 +7,64 @@ continue_on_error: false
 algorithms:
   - name: BaselineSVC
     allowed_scenarios: [cpu_sequential]
+    search:
+      enabled: false
   - name: CascadeSVC
     allowed_scenarios: [cpu_sequential]
+    search:
+      enabled: false
   - name: ThunderSVC
     allowed_scenarios: [gpu_single]
+    search:
+      enabled: false
   - name: BaselineMLP
     allowed_scenarios: [gpu_single]
     parameters:
       batch_size: 4096
       max_iter: 50
+    search:
+      enabled: false
   - name: GPipeMLP
     allowed_scenarios: [gpu_multi_2x]
     parameters:
       batch_size: 4096
       max_iter: 50
       chunks: 8
+    search:
+      enabled: false
   - name: FSDPMLP
     allowed_scenarios: [gpu_multi_2x]
     parameters:
       batch_size: 4096
       max_iter: 50
       use_fsdp: true
+    search:
+      enabled: false
   - name: BaselineRF
     allowed_scenarios: [cpu_sequential]
+    search:
+      enabled: false
   - name: HybridRF
     allowed_scenarios: [cpu_parallel]
+    search:
+      enabled: false
   - name: CuMLRF
     allowed_scenarios: [gpu_single]
+    search:
+      enabled: false
   - name: BaselineKNN
     allowed_scenarios: [cpu_sequential]
+    search:
+      enabled: false
   - name: CuMLKNN
     allowed_scenarios: [gpu_single]
+    search:
+      enabled: false
 
 datasets:
-  - name: breast_cancer_csv
-    loader: breast_cancer_csv
+  - name: diabetes_csv
+    loader: diabetes_csv
+    train_fractions: [0.05, 0.10, 0.15, 0.20, 0.30, 0.40, 0.50, 0.65, 0.80, 1.0]
 
 scenarios:
   - name: cpu_sequential

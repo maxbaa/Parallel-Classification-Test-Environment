@@ -309,21 +309,29 @@ DATASET_REGISTRY: dict[str, dict[str, Any]] = {
             "random_state": 42,
         },
     },
-    "breast_cancer_csv": {
-        "loader": load_csv_classification_dataset,
-        "default_parameters": {
-            "path": "datasets/breast-cancer.csv",
-            "target_column": "diagnosis",
-            "drop_columns": ["id"],
-            "test_size": 0.25,
-            "random_state": 42,
-        },
-    },
     "adult_csv": {
         "loader": load_csv_classification_dataset,
         "default_parameters": {
             "path": "datasets/adult.csv",
             "target_column": "income",
+            "test_size": 0.2,
+            "random_state": 42,
+        },
+    },
+    "diabetes_csv": {
+        "loader": load_csv_classification_dataset,
+        "default_parameters": {
+            "path": "datasets/diabetes.csv",
+            "target_column": "Diabetes_binary",
+            "test_size": 0.2,
+            "random_state": 42,
+        },
+    },
+    "skin_non_skin_csv": {
+        "loader": load_csv_classification_dataset,
+        "default_parameters": {
+            "path": "datasets/skin-non-skin.csv",
+            "target_column": "y",
             "test_size": 0.2,
             "random_state": 42,
         },

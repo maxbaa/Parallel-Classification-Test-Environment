@@ -8,7 +8,7 @@ Standardmaessig wird fuer jedes Modell eine Cross-Validation-basierte Hyperparam
 
 ```bash
 pip install -e .
-python -m pcte_cli --config configs/breast_cancer.yaml
+python -m pcte_cli --config configs/adult.yaml
 ```
 
 GPU-/Spezialverfahren erwarten, dass `torch`, `torchgpipe`, `cuml` bzw. `thundersvm` bereits passend in der Zielumgebung installiert sind. Das Projekt faengt fehlende oder inkonsistente Spezial-Runtimes nicht durch Fallbacks ab, sondern bricht den Lauf vor dem ersten Experiment mit einer klaren Preflight-Fehlermeldung ab.
@@ -16,26 +16,44 @@ GPU-/Spezialverfahren erwarten, dass `torch`, `torchgpipe`, `cuml` bzw. `thunder
 Alternativ kannst du nach der Installation den Konsolenbefehl verwenden:
 
 ```bash
-pcte-run --config configs/breast_cancer.yaml
+pcte-run --config configs/adult.yaml
 ```
 
-Verfuegbare Benchmark-Configs pro Datensatz:
+## Verfuegbare Benchmark-Configs
 
 ```bash
-python -m pcte_cli --config configs/breast_cancer.yaml
 python -m pcte_cli --config configs/adult.yaml
+python -m pcte_cli --config configs/diabetes.yaml
+python -m pcte_cli --config configs/skin_non_skin.yaml
 python -m pcte_cli --config configs/covtype.yaml
 ```
 
-Verfuegbare Skalierungs-Configs fuer Laufzeit-vs.-Trainingsgroesse:
+## Verfuegbare Skalierungs-Configs
 
 ```bash
-python -m pcte_cli --config configs/breast_cancer_scaling.yaml
 python -m pcte_cli --config configs/adult_scaling.yaml
+python -m pcte_cli --config configs/diabetes_scaling.yaml
+python -m pcte_cli --config configs/skin_non_skin_scaling.yaml
 python -m pcte_cli --config configs/covtype_scaling.yaml
 ```
 
-Beim groessten Datensatz `covtype_csv` werden die SVM-Varianten bewusst nur mit linearem Kernel konfiguriert.
+Bei den groessten Datensaetzen `covtype_csv`, `diabetes_csv` und `skin_non_skin_csv` solltest du SVM-Laufzeiten realistisch einplanen. Fuer `covtype_csv` werden die SVM-Varianten deshalb bewusst nur mit linearem Kernel konfiguriert.
+
+## Aktuelle Datensaetze
+
+Im Repo liegen aktuell diese CSV-Datensaetze:
+
+- `adult.csv`
+- `diabetes.csv`
+- `skin-non-skin.csv`
+- `covtype.csv`
+
+Die vorkonfigurierten Loader-Presets dafuer sind:
+
+- `adult_csv`
+- `diabetes_csv`
+- `skin_non_skin_csv`
+- `covtype_csv`
 
 ## Mehrere Python-Umgebungen
 
@@ -45,7 +63,7 @@ Wenn Docker im aktuellen Host-/Runpod-Setup nicht verfuegbar ist, kannst du das 
 - `rapids`: cuML- und Multi-GPU-cuML-Verfahren
 - `thunder`: ThunderSVC isoliert in einer eigenen Umgebung
 
-Die Datensatz-Configs (`configs/breast_cancer.yaml`, `configs/adult.yaml`, `configs/covtype.yaml`) bleiben dabei unveraendert. Ein kleiner Helfer filtert beim Start automatisch nur die Algorithmen, die zur jeweiligen Runtime gehoeren.
+Die Datensatz-Configs (`configs/adult.yaml`, `configs/diabetes.yaml`, `configs/skin_non_skin.yaml`, `configs/covtype.yaml`) bleiben dabei unveraendert. Ein kleiner Helfer filtert beim Start automatisch nur die Algorithmen, die zur jeweiligen Runtime gehoeren.
 
 Umgebungen anlegen:
 
@@ -104,7 +122,7 @@ Typisches Muster fuer einen wissenschaftlich saubereren Vergleich:
 - `gpu_single` fuer GPU-native Einzelgeraeteverfahren
 - `gpu_multi_2x` nur fuer Verfahren mit echter 2-GPU-Unterstuetzung
 - bei neuronalen Netzen sollte die Referenz sinnvollerweise ebenfalls auf `gpu_single` laufen, z.B. als PyTorch-Single-GPU-Baseline; verteilte Varianten wie `FSDPMLP` und `GPipeMLP` koennen separat auf `gpu_multi_2x` laufen
-- fuer Random Forests stehen nun sowohl `BaselineRF` und `HybridRF` auf CPU als auch `CuMLRF` auf GPU fuer den Direktvergleich bereit
+- fuer Random Forests stehen sowohl `BaselineRF` und `HybridRF` auf CPU als auch `CuMLRF` auf GPU fuer den Direktvergleich bereit
 
 Zusaetzlich koennen Algorithmen ueber `allowed_datasets` auf sinnvolle Datensaetze begrenzt werden, damit z.B. SVM-Varianten nicht auf unpassenden Big-Data-Lasten laufen.
 
@@ -112,12 +130,11 @@ Fuer CSV-Datensaetze kannst du den Loader `csv_classification` verwenden und `pa
 
 Fuer Skalierungsplots kannst du in einem Datensatzblock `train_sizes` oder `train_fractions` definieren. Der Loader behaelt dann einen festen Holdout-Testsplit und erzeugt deterministische, stratified Teilmengen des Trainingssplits, damit Laufzeiten ueber verschiedene Trainingsgroessen vergleichbar bleiben.
 
-Vorkonfigurierte CSV-Presets:
+Die aktuellen Scaling-Configs nutzen prozentuale Stufen:
 
-- `breast_cancer_csv`
-- `adult_csv`
-- `airline_csv`
-- `covtype_csv`
+`[0.05, 0.10, 0.15, 0.20, 0.30, 0.40, 0.50, 0.65, 0.80, 1.0]`
+
+Damit entspricht `1.0` immer dem vollen verfuegbaren Trainingssplit fuer den jeweiligen Datensatz.
 
 ## GPU-Hinweis
 
